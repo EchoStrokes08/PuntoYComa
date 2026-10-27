@@ -60,6 +60,14 @@ String _overpassJson() => jsonEncode({
   ],
 });
 
+/// Respuesta como la de Overpass: bytes UTF-8 reales (con tildes).
+/// `http.Response(texto, 200)` codificaría en latin1 y no representa al servidor.
+http.Response _ok() => http.Response.bytes(
+  utf8.encode(_overpassJson()),
+  200,
+  headers: const {'content-type': 'application/json; charset=utf-8'},
+);
+
 void main() {
   group('OsmStopRepository', () {
     test('cellCenter redondea al centro de la celda de ~1 km', () {
@@ -96,7 +104,7 @@ void main() {
       late String query;
       final client = MockClient((request) async {
         query = request.bodyFields['data']!;
-        return http.Response(_overpassJson(), 200);
+        return _ok();
       });
       final repo = OsmStopRepository(client: client);
 
@@ -122,7 +130,7 @@ void main() {
 
     test('trae paradas reales, las guarda en caché y las muestra', () async {
       final repo = OsmStopRepository(
-        client: MockClient((_) async => http.Response(_overpassJson(), 200)),
+        client: MockClient((_) async => _ok()),
       );
       final vm = DestinationViewModel(
         stopCache: cache,
@@ -171,7 +179,7 @@ void main() {
       final repo = OsmStopRepository(
         client: MockClient((_) async {
           llamadas++;
-          return http.Response(_overpassJson(), 200);
+          return _ok();
         }),
       );
       final vm = DestinationViewModel(
