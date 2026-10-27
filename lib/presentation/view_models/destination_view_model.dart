@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/routing/local_stop_cache.dart';
+import '../../data/routing/osm_stop_repository.dart';
 import '../../domain/entities/trip.dart';
 
 /// ViewModel de la pantalla de destino.
@@ -8,9 +9,20 @@ import '../../domain/entities/trip.dart';
 /// Gestiona la selección de parada, el caché de paradas recientes y la
 /// búsqueda de paradas cercanas sin depender de red.
 class DestinationViewModel extends ChangeNotifier {
-  DestinationViewModel({required this.stopCache});
+  DestinationViewModel({
+    required this.stopCache,
+    this.remoteStops,
+    this.resolveOrigin,
+  });
 
   final LocalStopCache stopCache;
+
+  /// Fuente remota opcional de paradas reales (OpenStreetMap).
+  final OsmStopRepository? remoteStops;
+
+  /// Resuelve el punto de búsqueda (ubicación del usuario o un centro por
+  /// defecto). Si devuelve null no se buscan paradas cercanas.
+  final Future<GeoPoint?> Function()? resolveOrigin;
 
   List<CachedStop> _recentStops = [];
   List<CachedStop> _nearbyStops = [];
@@ -19,6 +31,34 @@ class DestinationViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _searchQuery = '';
+  GeoPoint? _origin;
+  bool _disposed = false;
+
+  /// Punto desde el que se buscaron las paradas cercanas (null si aún no se
+  /// resolvió).
+  GeoPoint? get origin => _origin;
+
+  /// Paradas a dibujar en el mapa: recientes + cercanas, sin duplicados.
+  List<CachedStop> get mapStops {
+    final byId = <String, CachedStop>{};
+    for (final stop in [..._recentStops, ..._nearbyStops]) {
+      byId.putIfAbsent(stop.id, () => stop);
+    }
+    return byId.values.toList();
+  }
+
+  @override
+  void notifyListeners() {
+    // Las cargas son asíncronas: evita notificar si la pantalla ya se cerró.
+    if (_disposed) return;
+    super.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   List<CachedStop> get recentStops => _recentStops;
   List<CachedStop> get nearbyStops => _nearbyStops;
@@ -81,6 +121,32 @@ class DestinationViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Carga las paradas cercanas al usuario: primero lo que haya en caché
+  /// (funciona sin internet) y luego intenta traer paradas reales de la red
+  /// para la zona, guardándolas en caché para la próxima vez.
+  Future<void> loadNearbyFromOrigin() async {
+    final origin = await resolveOrigin?.call();
+    if (origin == null || _disposed) return;
+    _origin = origin;
+    notifyListeners();
+
+    await loadNearby(origin.latitude, origin.longitude);
+
+    final remote = remoteStops;
+    if (remote == null || _disposed) return;
+    try {
+      final fetched = await remote.fetchNearby(origin);
+      if (fetched.isEmpty || _disposed) return;
+      await stopCache.saveStopsForRoute(
+        OsmStopRepository.cacheKey(origin),
+        fetched,
+      );
+      await loadNearby(origin.latitude, origin.longitude);
+    } catch (_) {
+      // Sin red o servidor caído: se queda con lo que ya hay en caché.
     }
   }
 

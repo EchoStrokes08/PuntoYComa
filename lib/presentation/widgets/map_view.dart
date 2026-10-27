@@ -35,6 +35,7 @@ class PuntoMapView extends StatefulWidget {
 
 class _PuntoMapViewState extends State<PuntoMapView> {
   final Set<Marker> _markers = {};
+  GoogleMapController? _controller;
 
   @override
   void initState() {
@@ -71,11 +72,19 @@ class _PuntoMapViewState extends State<PuntoMapView> {
         widget.selectedStop != oldWidget.selectedStop) {
       _buildMarkers();
     }
+    // Si la ubicación se resuelve después de crear el mapa, se centra allí.
+    final target = widget.initialPosition;
+    if (target != null && target != oldWidget.initialPosition) {
+      _controller?.animateCamera(CameraUpdate.newLatLng(target));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.stops.isEmpty) {
+    // Sin paradas ni punto de partida no hay nada que centrar: estado vacío.
+    // Con un punto de partida (ubicación del usuario o centro por defecto) el
+    // mapa se dibuja igual, aunque todavía no haya marcadores.
+    if (widget.stops.isEmpty && widget.initialPosition == null) {
       return _EmptyMap(context);
     }
 
@@ -100,7 +109,7 @@ class _PuntoMapViewState extends State<PuntoMapView> {
               myLocationButtonEnabled: true,
               zoomControlsEnabled: false,
               compassEnabled: true,
-              onMapCreated: (_) {},
+              onMapCreated: (controller) => _controller = controller,
               onTap: (LatLng position) {
                 // Encontrar la parada más cercana al toque
                 CachedStop? nearest;
