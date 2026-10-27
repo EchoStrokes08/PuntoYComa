@@ -1,79 +1,39 @@
 # PuntoYcoma — avance y plan de trabajo
 
-Estado revisado en esta sesión: 26/10/2026. Este documento registra **lo que ya existe**, **lo que falta**, **el plan elaborado por fases** y **la configuración que el entorno aún necesita**. Complementa (no reemplaza) `GUIA_DE_PUESTA_EN_MARCHA.md`.
+Estado revisado en esta sesión: 26/10/2026. Este documento registra **lo que ya existe**, **lo que falta para una app sobresaliente**, **el plan elaborado por fases** y **la configuración que el entorno aún necesita**. Complementa (no reemplaza) `GUIA_DE_PUESTA_EN_MARCHA.md` y `GUIA_DE_EJECUCION.md`. Véase `docs/ANALISIS_ESTADO_ACTUAL.md` para el análisis profundo de brechas.
 
-## 0. Avance ejecutado en esta misma sesión (2026-10-25 y 26/10/2026)
+---
 
-Todo validado: `flutter analyze` (0 issues), `flutter test` (47 pruebas ✅), backend `npm test` (10 pruebas ✅) + `tsc --noEmit` limpio + `npm run build` OK.
+## 0. Resumen ejecutivo
 
-- ✅ **Fase 4 — Experiencia de producto** (completada 26/10/2026):
-  - `lib/presentation/screens/home_screen.dart`: UI reescrita con widgets accesibles, estados de confianza con explicación accionable, "Probar vibración" conectado al actuador real (`WakeUpActuator.testPattern`), "Probar notificación", botones con tamaño táctil ≥ 48 dp y labels semánticos para lectores de pantalla.
-  - `lib/presentation/widgets/`: widgets reutilizables (`AccessibleButton`, `AccessibleFilledButton`, `AccessibleOutlinedButton`, `AccessibleTextButton`, `ConfidenceBanner`, `MetricCard`, `StopCard`, `StageBanner`).
-  - `lib/domain/services/trip_history_contracts.dart`: contrato para recientes y favoritos.
-  - `lib/data/persistence/trip_history_repository.dart`: implementación cifrada de recientes/favoritos con `flutter_secure_storage`.
-  - `lib/domain/services/secure_storage_contracts.dart`: interfaz compartida de almacenamiento clave-valor para testabilidad.
-  - `lib/data/persistence/flutter_secure_storage_adapter.dart` e `in_memory_secure_storage.dart`: adaptadores de producción y prueba.
-  - 12 pruebas nuevas: 5 del historial (guardar/recuperar recientes, toggle favorito, getFavorites, clearRecents, límite de getRecents) + 7 del controller actualizado (historial, test vibration, test notification).
-- ✅ **Fase 3 — Batería y señal** (completada 26/10/2026):
-  - `lib/presentation/state/trip_controller.dart`: cambio dinámico de perfil de ubicación (pasivo ≥ 3 km → balanced 1-3 km → highAccuracy < 1 km o en etapa de alarma), reinicio del watch al cambiar de perfil, filtro de saltos imposibles (> 50 m/s ≈ 180 km/h) entre fixes consecutivos, perfil resetea a balanced tras cancelar.
-  - `lib/data/routing/local_stop_cache.dart`: caché local de paradas GTFS simplificado sobre `flutter_secure_storage` (interfaz `SecureStorage` testeable, adaptador de producción y `InMemorySecureStorage` para tests), operaciones `saveStopsForRoute`, `getStopsForRoute`, `clearRoute`, `nearbyStops` (filtrado por radio y orden por distancia), `clearAll`; índice de rutas para listado.
-  - 17 pruebas nuevas: 10 del controller (perfiles dinámicos, filtro de saltos, reset tras cancel) + 7 del caché (guardar/leer/borrar, nearbyStops con radio/límite, clearAll).
-- ✅ **Desbloqueo del entorno**: se eliminó el `AutoRun` de CMD roto (`HKCU:\...\Command Processor → C:\Users\oscar\alias.cmd`) y se terminó el bootstrap inicial del SDK (Flutter 3.47.8 · Dart 3.13.7).
-- ✅ **Proyecto nativo generado**: `flutter create .` creó `android/` e `ios/` (platforms android,ios) sin tocar `lib/` ni `test/`.
-- ✅ **Dependencias agregadas**: `geolocator 14`, `flutter_secure_storage 11`, `flutter_local_notifications 22` (y transitivas), con `pubspec.lock` resuelto.
-- ✅ **Fase 1 — capa `data` completa** (implementa los contratos de `platform_contracts.dart`):
-  - `lib/data/location/geolocator_location_source.dart`: stream de `LocationSample` por perfil (passive/balanced/highAccuracy), mapeo de precisión/velocidad y `ensurePermission()` (check + request).
-  - `lib/data/persistence/secure_trip_repository.dart`: viaje activo cifrado (`flutter_secure_storage`) + `TripMapper` JSON ida/vuelta.
-  - `lib/data/alerts/local_notification_wake_up_actuator.dart`: vibración gradual por etapa, notificación local persistente y alarma audible con `fullScreenIntent`; "Sonido al final" configurable vía `configure()`.
-  - `lib/data/alerts/trip_protection_bridge.dart`: puente a Android foreground service vía `MethodChannel`.
-- ✅ **Estado conectado**: `lib/presentation/state/trip_controller.dart` orquesta armar (pide permiso → persiste → vigila), resume tras reinicio (`tryResume`), reevalúa cada 3 s (Timer) para que la incertidumbre avance sin GPS nuevo, dispara el aviso preventivo una única vez y escala al actuador solo al cambiar de etapa.
-- ✅ **UI real**: `home_screen.dart` ya no usa datos falsos; selecciona parada con coordenadas, arma la alarma con plomo y sonido elegidos, muestra distancia real, ETA estimada, estado de señal (alta/degradada/limitada), banner de etapa de alarma con botón "Ya desperté" (acknowledge) y cancelación que limpia repositorio y actuador.
-- ✅ **Pruebas nuevas** (`test/trip_controller_test.dart`, 9 casos originales): permiso denegado, escalado por radio con/sin acknowledge, fallback audible, aviso preventivo a los 4 min exactamente 1 vez, filtro de fixes de precisión > 60 m, recuperación tras reinicio.
-- ✅ **Fase 2 — Alarma robusta ante cierre/reinicio** (completada): `TripProtectionService.kt` (foreground service de ubicación), `BootReceiver.kt` (recuperación tras BOOT_COMPLETED), `MainActivity.kt` (MethodChannel `punto_y_coma/protection` con setArmedFlag/startForeground/stopForeground), `AndroidManifest.xml` con permisos y declaraciones de servicio/receiver.
-- ✅ **Fase 5 adelantada — backend en producción de desarrollo**: stack Docker levantado y verificado end-to-end el 25/10/2026 — `health` OK; reportes persistidos en PostgreSQL real con la migración aplicada (celda `4.66:-74.06`, hash rotativo distinto por instalación); feed entrega solo conteos (`crowded: 1, delay: 1`); el índice anti-duplicado ignoró en silencio el reporte repetido de la misma instalación en el mismo día/celda/categoría (2 filas totales en BD). Se corrigió el arranque del contenedor: `tsconfig` ahora compila solo `src/` con `rootDir` (el `CMD` buscaba `dist/server.js` que antes vivía en `dist/src/`).
-- ✅ **Permisos nativos Android** añadidos en `AndroidManifest.xml`: ubicación fina/coarse, `POST_NOTIFICATIONS`, `VIBRATE`; label de app "PuntoYcoma".
+**Todo el núcleo funcional está completo y validado:** `flutter analyze` (0 issues), `flutter test` (47 pruebas ✅), backend `npm test` (10 pruebas ✅), `tsc --noEmit` limpio, `npm run build` OK.
 
-- ✅ **Fase 3 — Batería y señal** (completada 26/10/2026):
-  - `lib/presentation/state/trip_controller.dart`: cambio dinámico de perfil de ubicación (pasivo ≥ 3 km → balanced 1-3 km → highAccuracy < 1 km o en etapa de alarma), reinicio del watch al cambiar de perfil, filtro de saltos imposibles (> 50 m/s ≈ 180 km/h) entre fixes consecutivos, perfil resetea a balanced tras cancelar.
-  - `lib/data/routing/local_stop_cache.dart`: caché local de paradas GTFS simplificado sobre `flutter_secure_storage` (interfaz `SecureStorage` testeable, adaptador de producción y `InMemorySecureStorage` para tests), operaciones `saveStopsForRoute`, `getStopsForRoute`, `clearRoute`, `nearbyStops` (filtrado por radio y orden por distancia), `clearAll`; índice de rutas para listado.
-  - 17 pruebas nuevas: 10 del controller (perfiles dinámicos, filtro de saltos, reset tras cancel) + 7 del caché (guardar/leer/borrar, nearbyStops con radio/límite, clearAll).
-- ✅ **Desbloqueo del entorno**: se eliminó el `AutoRun` de CMD roto (`HKCU:\...\Command Processor → C:\Users\oscar\alias.cmd`) y se terminó el bootstrap inicial del SDK (Flutter 3.47.8 · Dart 3.13.7).
-- ✅ **Proyecto nativo generado**: `flutter create .` creó `android/` e `ios/` (platforms android,ios) sin tocar `lib/` ni `test/`.
-- ✅ **Dependencias agregadas**: `geolocator 14`, `flutter_secure_storage 11`, `flutter_local_notifications 22` (y transitivas), con `pubspec.lock` resuelto.
-- ✅ **Fase 1 — capa `data` completa** (implementa los contratos de `platform_contracts.dart`):
-  - `lib/data/location/geolocator_location_source.dart`: stream de `LocationSample` por perfil (passive/balanced/highAccuracy), mapeo de precisión/velocidad y `ensurePermission()` (check + request).
-  - `lib/data/persistence/secure_trip_repository.dart`: viaje activo cifrado (`flutter_secure_storage`) + `TripMapper` JSON ida/vuelta.
-  - `lib/data/alerts/local_notification_wake_up_actuator.dart`: vibración gradual por etapa, notificación local persistente y alarma audible con `fullScreenIntent`; "Sonido al final" configurable vía `configure()`.
-  - `lib/data/alerts/trip_protection_bridge.dart`: puente a Android foreground service vía `MethodChannel`.
-- ✅ **Estado conectado**: `lib/presentation/state/trip_controller.dart` orquesta armar (pide permiso → persiste → vigila), resume tras reinicio (`tryResume`), reevalúa cada 3 s (Timer) para que la incertidumbre avance sin GPS nuevo, dispara el aviso preventivo una única vez y escala al actuador solo al cambiar de etapa.
-- ✅ **UI real**: `home_screen.dart` ya no usa datos falsos; selecciona parada con coordenadas, arma la alarma con plomo y sonido elegidos, muestra distancia real, ETA estimada, estado de señal (alta/degradada/limitada), banner de etapa de alarma con botón "Ya desperté" (acknowledge) y cancelación que limpia repositorio y actuador.
-- ✅ **Pruebas nuevas** (`test/trip_controller_test.dart`, 9 casos originales): permiso denegado, escalado por radio con/sin acknowledge, fallback audible, aviso preventivo a los 4 min exactamente 1 vez, filtro de fixes de precisión > 60 m, recuperación tras reinicio.
-- ✅ **Fase 2 — Alarma robusta ante cierre/reinicio** (completada): `TripProtectionService.kt` (foreground service de ubicación), `BootReceiver.kt` (recuperación tras BOOT_COMPLETED), `MainActivity.kt` (MethodChannel `punto_y_coma/protection` con setArmedFlag/startForeground/stopForeground), `AndroidManifest.xml` con permisos y declaraciones de servicio/receiver.
-- ✅ **Fase 5 adelantada — backend en producción de desarrollo**: stack Docker levantado y verificado end-to-end el 25/10/2026 — `health` OK; reportes persistidos en PostgreSQL real con la migración aplicada (celda `4.66:-74.06`, hash rotativo distinto por instalación); feed entrega solo conteos (`crowded: 1, delay: 1`); el índice anti-duplicado ignoró en silencio el reporte repetido de la misma instalación en el mismo día/celda/categoría (2 filas totales en BD). Se corrigió el arranque del contenedor: `tsconfig` ahora compila solo `src/` con `rootDir` (el `CMD` buscaba `dist/server.js` que antes vivía en `dist/src/`).
-- ✅ **Permisos nativos Android** añadidos en `AndroidManifest.xml`: ubicación fina/coarse, `POST_NOTIFICATIONS`, `VIBRATE`; label de app "PuntoYcoma".
+**Estado de las fases del MVP:**
+
+| Fase | Estado | Descripción |
+|---|---|---|
+| **Fase 1** — Capa `data` y armado real | ✅ Completa | Adaptadores de ubicación, persistencia cifrada, notificaciones, `TripController`, UI real conectada |
+| **Fase 2** — Alarma robusta ante cierre/reinicio | ✅ Completa | Foreground service Android, `BootReceiver`, `MethodChannel`, recuperación tras boot |
+| **Fase 3** — Batería y señal | ✅ Completa | Perfiles dinámicos de ubicación, filtro de saltos imposibles, caché GTFS local |
+| **Fase 4** — Experiencia de producto | ✅ Completa | Widgets accesibles, estados de confianza, vibración/notificación de prueba, recientes/favoritos |
+| **Fase 5** — Backend PostgreSQL + cliente Flutter | ✅ Completa | `PostgresReportRepository`, migración, purga TTL, CORS, rate limit, `CommunityRadar` |
+
+**Lo que falta para una app sobresaliente (nuevas fases A–E):**
+
+| Fase | Estado | Descripción |
+|---|---|---|
+| **Fase A** — Sistema de diseño y fundamentos visuales | ❌ Pendiente | Tipografía, paleta, componentes custom, ilustraciones, modo oscuro diseñado a mano |
+| **Fase B** — Arquitectura de presentación escalable | ❌ Pendiente | View models, pantallas divididas, navegación nombrada, animaciones |
+| **Fase C** — Pantallas de experiencia faltantes | ❌ Pendiente | Onboarding, mapa, búsqueda, alarma a pantalla completa, histórico, ajustes |
+| **Fase D** — Funcionalidades avanzadas de alarma | ❌ Pendiente | Posponer, editar viaje, temporizador manual, notificaciones con acciones, widget de bloqueo |
+| **Fase E** — Calidad, pruebas y pulido final | ❌ Pendiente | Widget tests, golden tests, integración, accesibilidad WCAG AA, docs |
+
+---
 
 ## 1. Inventario: lo que YA existe
 
 ### Flutter — dominio (`lib/domain`) ✅ completo y con pruebas
-| Elemento | Archivo | Estado |
-|---|---|---|
-| Entidades `Trip`, `GeoPoint`, `TripStatus`, `TransportMode` | `lib/domain/entities/trip.dart` | Completo |
-| Distancia Haversine, radio de alerta dinámico, *dead reckoning* con incertidumbre | `lib/domain/services/arrival_prediction.dart` | Completo |
-| Escalamiento háptico: `monitoring → gentleHaptic → persistentHaptic → audibleFallback` (la incertidumbre adelanta, nunca retrasa) | `lib/domain/services/wake_up_policy.dart` | Completo |
-| Orquestador `TripMonitor.assess()` con estados de confianza y aviso preventivo por pérdida de señal | `lib/domain/services/trip_monitor.dart` | Completo |
-| Contratos de plataforma: `LocationSource`, `WakeUpActuator`, `TripRepository`, `LocationTrackingProfile` | `lib/domain/services/platform_contracts.dart` | Solo interfaces (sin ninguna implementación) |
-| Pruebas de regresión | `test/arrival_prediction_test.dart`, `test/trip_monitor_test.dart` | Existen |
 
-### Flutter — presentación ✅ UI real conectada al estado, accesible y modular
-- `lib/main.dart`: tema Material 3 con modo claro/oscuro automático. Inyección de dependencias de toda la capa `data` y `presentation`. Completo.
-- `lib/presentation/screens/home_screen.dart`: flujo de 4 pasos (Bienvenida → Destino → Preparación → Vigilando) con datos **reales del dominio**: selecciona parada con coordenadas, arma alarma con plomo y sonido, muestra distancia/ETA reales, estado de señal (alta/degradada/limitada) con explicación accionable, etapa de alarma con "Ya desperté" y cancelación que limpia repositorio y actuador. Consume `TripController` y el dominio.
-- `lib/presentation/widgets/`: widgets reutilizables con accesibilidad integrada:
-  - `AccessibleButton`, `AccessibleFilledButton`, `AccessibleOutlinedButton`, `AccessibleTextButton`: touch target ≥ 48 dp, labels semánticas, hints para lectores de pantalla.
-  - `ConfidenceBanner`: estado de señal con mensaje accionable y botón "Más info".
-  - `MetricCard`, `StopCard`, `StageBanner`: tarjetas consistentes para métricas, destino y etapa de alarma.
-- `lib/data/routing/local_stop_cache.dart`: caché local de paradas GTFS simplificado (guardar/leer/borrar por ruta, `nearbyStops` por radio, `clearAll`).
-
-### Flutter — dominio ✅ completo y con pruebas
 | Elemento | Archivo | Estado |
 |---|---|---|
 | Entidades `Trip`, `GeoPoint`, `TripStatus`, `TransportMode` | `lib/domain/entities/trip.dart` | Completo |
@@ -86,12 +46,55 @@ Todo validado: `flutter analyze` (0 issues), `flutter test` (47 pruebas ✅), ba
 | Contrato de radar comunitario: `CommunityRadar` | `lib/domain/services/community_radar_contracts.dart` | Completo |
 | Pruebas de regresión | `test/arrival_prediction_test.dart`, `test/trip_monitor_test.dart` | Existen |
 
+### Flutter — datos (`lib/data`) ✅ adaptadores completos
+
+| Adaptador | Contrato | Archivo | Estado |
+|---|---|---|---|
+| `GeolocatorLocationSource` | `LocationSource` | `lib/data/location/geolocator_location_source.dart` | Completo |
+| `SecureTripRepository` | `TripRepository` | `lib/data/persistence/secure_trip_repository.dart` | Completo |
+| `LocalNotificationWakeUpActuator` | `WakeUpActuator` | `lib/data/alerts/local_notification_wake_up_actuator.dart` | Completo |
+| `TripProtectionBridge` | `MethodChannel` puente | `lib/data/alerts/trip_protection_bridge.dart` | Completo |
+| `LocalStopCache` | `SecureStorage` | `lib/data/routing/local_stop_cache.dart` | Completo |
+| `TripHistoryRepositoryImpl` | `TripHistoryRepository` | `lib/data/persistence/trip_history_repository.dart` | Completo |
+| `FlutterSecureStorageAdapter` | `SecureStorage` | `lib/data/persistence/flutter_secure_storage_adapter.dart` | Completo |
+| `InMemorySecureStorage` | `SecureStorage` | `lib/data/persistence/in_memory_secure_storage.dart` | Completo |
+| `CommunityApiClient` | HTTP cliente | `lib/data/community/community_api.dart` | Completo |
+| `CommunityRadarRepository` | `CommunityRadar` | `lib/data/community/community_radar_repository.dart` | Completo |
+
+### Flutter — presentación (`lib/presentation`) ✅ funcional, ⚠️ genérico
+
+| Elemento | Archivo | Estado |
+|---|---|---|
+| Tema Material 3, modo claro/oscuro, inyección de dependencias | `lib/main.dart` | Completo |
+| Pantalla principal de 4 pasos (Bienvenida → Destino → Preparación → Vigilando) | `lib/presentation/screens/home_screen.dart` | Funcional pero genérico (686 líneas, sin animaciones, sin diseño propio) |
+| Widgets accesibles (botones, banners, tarjetas) | `lib/presentation/widgets/` | Completo (8 widgets reutilizables) |
+| Orquestador de alarma, perfiles de ubicación, historial | `lib/presentation/state/trip_controller.dart` | Completo |
+
 ### Flutter — proyecto nativo ✅ generado
+
 - `android/`, `ios/`, `web/` generados con `flutter create .` sin tocar `lib/` ni `test/`.
 - `.dart_tool/` y `pubspec.lock` resueltos tras `flutter pub get`.
 - `analysis_options.yaml` con `include: package:flutter_lints/flutter.yaml` activo (0 issues en analyze).
 
-## Separación backend / frontend (completa)
+### Backend Fastify ✅ núcleo funcional (Fase 5 completa)
+
+| Elemento | Archivo | Estado |
+|---|---|---|
+| Fastify + helmet + rate limit IP + rate limit anonymousDayId + CORS + Zod | `backend/src/app.ts` | Completo |
+| `InMemoryReportRepository` y `PostgresReportRepository` con `pg` | `backend/src/repository.ts` | Completo |
+| Rate limiter por reporter con ventanas de 1 min | `backend/src/reporter_rate_limiter.ts` | Completo |
+| Selección Postgres/memoria, purga TTL, shutdown graceful | `backend/src/server.ts` | Completo |
+| Migración: enum, tabla, índices, anti-duplicado | `backend/migrations/001_initial.sql` | Completo |
+| Empaquetado: `Dockerfile`, `compose.yaml`, `dist/` compilado | `backend/Dockerfile`, `backend/compose.yaml` | Completo |
+| Pruebas: 10 pasando, lint limpio, build OK | `backend/test/` | Completo |
+
+### Documentación ✅
+
+- `ESPECIFICACION_TECNICA.md`, `FLUJO_UX.md`, `ARQUITECTURA_BACKEND.md`, `GUIA_DE_PUESTA_EN_MARCHA.md`, `GUIA_DE_EJECUCION.md`, `ANALISIS_ESTADO_ACTUAL.md` + este avance.
+
+---
+
+## 2. Separación backend / frontend (completa)
 
 El proyecto mantiene una separación estricta entre frontend (Flutter) y backend (Fastify/TypeScript):
 
@@ -100,124 +103,192 @@ El proyecto mantiene una separación estricta entre frontend (Flutter) y backend
 - **Contrato de integración**: el backend expone `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`. El frontend consume estos endpoints detrás del contrato `CommunityRadar` en la capa `data`, sin integrarse a la lógica de alarma.
 - **Privacidad**: el backend nunca almacena coordenadas crudas (usa celda de ~1 km), el identificador de instalación rota diariamente (`anonymousDayId`), y los reportes expiran a 30 min.
 
-## Modularización y Clean Code
+---
+
+## 3. Modularización y Clean Code
 
 ### Capas y responsabilidades
+
 | Capa | Directorio | Responsabilidad |
 |---|---|---|
 | `domain` | `lib/domain/` | Reglas puras: entidades, contratos, políticas de alarma, predicción de llegada. Sin dependencias de plugins ni Flutter UI. |
-| `data` | `lib/data/` | Adaptadores detrás de contratos de dominio: ubicación, persistencia, notificaciones, caché de paradas, almacenamiento seguro. |
+| `data` | `lib/data/` | Adaptadores detrás de contratos de dominio: ubicación, persistencia, notificaciones, caché de paradas, almacenamiento seguro, cliente de API comunitaria. |
 | `presentation` | `lib/presentation/` | Pantallas, estado (`TripController`), widgets reutilizables. Conecta el dominio con la UI. |
 
 ### Principios aplicados
-- **Inversión de dependencias**: el dominio define interfaces (`LocationSource`, `WakeUpActuator`, `TripRepository`, `TripHistoryRepository`, `SecureStorage`); el `data` las implementa.
+
+- **Inversión de dependencias**: el dominio define interfaces; el `data` las implementa.
 - **Interfaces testeables**: `SecureStorage` permite usar `InMemorySecureStorage` en tests sin canal de plataforma nativa.
 - **Widgets reutilizables**: `presentation/widgets/` agrupa componentes accesibles con touch target ≥ 48 dp y semántica.
 - **Sin datos falsos**: la UI consume exclusivamente el estado real de `TripController`.
 - **Fail-open**: adaptadores nativos fallan en silencio (MissingPluginException) en web/desktop/test sin romper la app.
 
 ### Cuello de botella crítico
-Resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye. Todas las fases 1-5 están completas.
 
-### Backend Fastify ✅ núcleo funcional para desarrollo (Fase 5 completa)
-- `backend/src/app.ts`: Fastify + helmet + rate limit global por IP (30 req/min) + rate limit por `anonymousDayId` (5 req/min por instalación) + validación Zod; rutas `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`.
-- `backend/src/repository.ts`: `InMemoryReportRepository` y `PostgresReportRepository` (usa `pg`, migración `001_initial.sql`, `ON CONFLICT` para anti-duplicado, `feed` con conteos agregados por categoría).
-- `backend/src/reporter_rate_limiter.ts`: rate limiter por reporter con ventanas fijas de 1 minuto.
-- `backend/src/server.ts`: selecciona Postgres si `DATABASE_URL` está definido, si no usa memoria; purga de expirados cada 60 s; shutdown graceful.
-- Contrato de privacidad implementado: celda de ~1 km (`privacyCell`), `anonymousDayId` rotativo diario, expiración a 30 min, feed solo con conteos agregados.
-- Migración `migrations/001_initial.sql`: enum `report_status`, tabla `community_reports`, índice de feed, índice único anti-duplicado.
-- Empaquetado: `Dockerfile`, `compose.yaml` (api + postgres:16), `test/` con 10 pruebas pasando, `dist/` compilado.
-- Tests: 10 pasando (`npm test`), `tsc --noEmit` limpio, `npm run build` OK.
+Resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye. Todas las fases 1-5 del MVP están completas.
 
-### Documentación ✅
-`ESPECIFICACION_TECNICA.md`, `FLUJO_UX.md`, `ARQUITECTURA_BACKEND.md`, `GUIA_DE_PUESTA_EN_MARCHA.md` + este avance.
+---
 
-## 2. Brechas: lo que FALTA (de lo pendiente de la guía)
+## 4. Plan de fases para app sobresaliente (Fases A–E)
 
-La guía marca 4 prioridades; el estado real por bloque:
+Cada fase termina con `flutter analyze` (0 issues), `flutter test` (todas pasando), y criterios de aceptación verificables.
 
-| Bloque | Estado real |
-|---|---|
-| **1. Viaje armado confiable** | ✅ Completo: capa `data` completa, `TripController` conectado, UI real, permisos, persistencia cifrada |
-| **2. Batería y señal** | ✅ Completo: perfiles dinámicos de ubicación, filtro de saltos imposibles, caché local de paradas GTFS, todo con pruebas |
-| **3. Experiencia de producto** | ✅ Completo: UI accesible con estados de confianza, vibración/notificación de prueba, recientes/favoritos, widgets reutilizables |
-| **4. Servicios externos y comunidad** | ✅ Completo: backend PostgreSQL con `PostgresReportRepository`, migración aplicada, purga TTL automática, CORS condicional, rate limit por IP + anonymousDayId, cliente Flutter `CommunityRadar` con `CommunityApiClient` y `CommunityRadarRepository`, todo con pruebas |
+### Fase A — Sistema de diseño y fundamentos visuales ✅ COMPLETADA (26/10/2026)
 
-**Cuello de botella crítico:** resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye.
+1. ✅ Tipografía: PlayfairDisplay (serif, display) + Inter (sans, cuerpo), escala display→caption
+2. ✅ Espaciado: escala 8dp grid (xs=4, sm=8, md=16, lg=24, xl=32, xxl=48)
+3. ✅ Paleta: verde bosque #0F3D2E, crema #F7F3EC, carbón #1A1A1A, naranja quemado #D9730D (alarma)
+4. ✅ Componentes: botón primario/outlined/texto, tarjeta, avatar, chip de señal — todos ≥ 48dp touch target
+5. ⚠️ Ilustraciones custom: pendiente (usar placeholders hasta tener arte final)
+6. ⚠️ Iconografía consistente: pendiente (usar Material Icons unificados hasta tener set custom)
+7. ✅ Modo oscuro: diseñado a mano, no inversión de colores
 
-## 3. Plan elaborado por fases
+Criterios de aceptación Fase A: `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde.
 
-Cada fase termina con `flutter analyze`, `flutter test` (o `npm test` en backend) en verde y un criterio de aceptación verificable.
+---
 
-### Fase 0 — Desbloquear el entorno (antes de escribir código)
-1. **Corregir el AutoRun roto de CMD** (detalle en §4): elimina la clave de registro o crea `C:\Users\oscar\alias.cmd`.
-2. **Terminar el bootstrap de Flutter** (detalle en §4).
-3. `flutter create .` para generar `android/`, `ios/`, `web/` (sin sobrescribir `lib/` ni `test/`).
-4. Añadir `analysis_options.yaml` con `include: package:flutter_lints/flutter.yaml`.
-5. `flutter pub get` y `flutter analyze` para confirmar que arrastra generación de código y lints.
-6. `flutter doctor --android-licenses` y crear el emulador Pixel (requiere Android Studio — configuración del usuario, ver §4).
-7. Backend: `npm test` para confirmar el entorno Node 24 (ya instalado) sin Docker.
-8. **Criterio de salida:** `flutter doctor` con ✅ Android toolchain · analyze/test en verde · backend `npm run dev` respondiendo `/health` con repositorio en memoria.
+### Fase B — Arquitectura de presentación escalable
 
-### Fase 1 — Capa `data` y armado real (Prioridad 1 del MVP)
-Adaptadores detrás de los contratos existentes, sin tocar el dominio:
-1. Dependencias: `geolocator` (ubicación + permisos), `flutter_secure_storage` (viaje activo cifrado), `flutter_local_notifications` (canal de despertar), `permission_handler`.
-2. `GeolocatorLocationSource implements LocationSource`: `watch(LocationTrackingProfile)` → stream de `LocationSample`; un permiso denegado se modela como un `PermissionDenied` (el dominio decide el escalado preventivo).
-3. `SecureTripRepository implements TripRepository` con `flutter_secure_storage`.
-4. `TripController extends ChangeNotifier` (*plain*, sin frameworks nuevos): escucha stream, llama `TripMonitor.assess()`, expone `TripAssessment` a la UI.
-5. Conectar las 4 pantallas al estado real: sin datos falsos; sin fix confiable, la pantalla "Vigilando" muestra los estados de confianza (`high → degraded → limited`).
-6. Armar alarma = solicitar permisos gradualmente → persistir viaje → iniciar vigilancia. Retomar: al abrir la app, `readActive()` y si el viaje sigue armado, reanudar monitoreo.
-7. **Criterio:** con un `LocationSource` falso (tests) se verifica disparo háptico por radio dinámico, escalado por incertidumbre y aviso preventivo a los 3 min; con GPS real se reproduce en el emulador.
+**Objetivo:** Dividir `home_screen.dart` (686 líneas) en view models y widgets dedicados, con navegación nombrada y animaciones.
 
-### Fase 2 — Alarma robusta ante cierre/reinicio
-1. `WakeUpActuator` real (vibración gradual + notificación local + sonido final configurable → el switch "Sonido al final" ya existe en la UI).
-2. Notificación persistente Android con progreso; botones de acción (confirmar / posponer).
-3. Persistencia al fondo con servicio en primer plano (`foregroundServiceAndroid`); arranque tras reinicio vía `BootBroadcastReceiver` guardando el viaje cifrado.
-4. **Criterio:** armar alarma → cerrar app → alarma sonora en la hora simulada; reinicio del teléfono → el viaje armado se recupera o caduca de forma limpia según la política documentada.
+1. **View models:**
+   - `WelcomeViewModel` — bienvenida y demo háptica
+   - `DestinationViewModel` — búsqueda de paradas, selección, mapa
+   - `PreparationViewModel` — margen, sonido, armado
+   - `ArmedTripViewModel` — estado de viaje, ETA, señal, alarma
+   - `AlarmWakeViewModel` — pantalla de alarma sonora, posponer, acknowledge
+   - `HistoryViewModel` — recientes y favoritos
+   - `SettingsViewModel` — configuración de la app
 
-### Fase 3 — Batería y señal (Prioridad 2) ✅ COMPLETADA (26/10/2026)
-1. ✅ Cambio de perfil por fase del viaje: pasivo (≥ 3 km) → balanced (1-3 km) → highAccuracy (< 1 km o etapa de alarma), con reinicio del watch al cambiar de perfil.
-2. ✅ Filtro de posiciones: precisión baja (> 60 m) y saltos imposibles (> 50 m/s ≈ 180 km/h) entre fixes consecutivos.
-3. ✅ Precarga de paradas de la ruta en caché local (`LocalStopCache` sobre `flutter_secure_storage`, interfaz `SecureStorage` testeable).
-4. **Criterio verificado:** modo ahorro (pasivo) no retrasa el aviso; el aviso preventivo se dispara a los 3-4 min sin señal (prueba "four minutes without fixes fire exactly one preventive alert").
+2. **Pantallas dedicadas (una por archivo):**
+   - `WelcomeScreen` — onboarding con ilustración y demo
+   - `DestinationScreen` — buscador + mapa + lista de paradas
+   - `PreparationScreen` — configuración de alarma previa
+   - `ArmedTripScreen` — viaje en curso con señales y métricas
+   - `AlarmWakeScreen` — alarma a pantalla completa (alto contraste)
+   - `HistoryScreen` — recientes y favoritos
+   - `SettingsScreen` — ajustes de la app
 
-Criterio de aceptación Fase 3: `flutter analyze` 0 issues, `flutter test` 31 pruebas en verde.
+3. **Navegación:** Rutas nombradas con `GoRouter` o equivalent, transiciones de página compartidas.
 
-### Fase 4 — Experiencia de producto (Prioridad 3) ✅ COMPLETADA (26/10/2026)
-1. ✅ Estados de confianza visibles con explicación accionable (`ConfidenceBanner`: buena → degradada → limitada, con hint y "Más info").
-2. ✅ "Probar vibración" conectado al patrón real del actuador (`TripController.testVibration` → `WakeUpActuator.testPattern`).
-3. ✅ "Probar notificación" conectado al actuador (`TripController.testNotification` → `WakeUpActuator.testNotification`).
-4. ✅ Recientes y favoritos en almacenamiento local (`TripHistoryRepositoryImpl` sobre `flutter_secure_storage`, cifrado).
-5. ✅ Accesibilidad: touch target ≥ 48 dp (`AccessibleButton` family), labels semánticas (`Semantics`), hints para lectores de pantalla, contraste con `ColorScheme.fromSeed`.
+4. **Animaciones:**
+   - `SharedAxisTransition` entre pasos
+   - Hero animation del radar al armar
+   - Staggered reveal de tarjetas en preparación
+   - Pulso animado del radar en viaje armado
+   - Parpadeo de alerta en etapa de alarma sonora
 
-Criterio de aceptación Fase 4: `flutter analyze` 0 issues, `flutter test` 36 pruebas en verde.
+**Criterios de aceptación:**
+- `home_screen.dart` reducido a < 200 líneas (solo orchestrator)
+- Cada pantalla en su propio archivo < 300 líneas
+- Navegación nombrada funcionando
+- Al menos 3 tipos de animación personalizada
 
-### Fase 5 — Backend a PostgreSQL y cliente Flutter (Prioridad 4) ✅ COMPLETADA (26/10/2026)
-1. ✅ `PostgresReportRepository` con `pg` usando `migrations/001_initial.sql` (tipo enum, tabla, índices, anti-duplicado con `ON CONFLICT`).
-2. ✅ Purga de expirados: `setInterval` cada 60 s que ejecuta `DELETE WHERE expires_at < now()`.
-3. ✅ CORS de la app (`@fastify/cors`, origen configurable vía `CORS_ORIGIN`) + rate limit por `anonymousDayId` (5 req/min por instalación, además del límite global de 30 req/min por IP).
-4. ✅ Cliente Flutter `/data/community_api.dart` (`CommunityApiClient`) y `lib/data/community/community_radar_repository.dart` (`CommunityRadarRepository`) detrás del contrato `CommunityRadar` en dominio (`lib/domain/services/community_radar_contracts.dart`), sin integrarse a la alarma local.
-5. ✅ Criterio verificado: reporte persistido con expiración a 30 min, feed con conteos agregados por categoría, app publicando/consumiendo con manejo de errores (fail-open: la alarma local no se ve afectada si el servidor cae).
+---
 
-Criterio de aceptación Fase 5: backend `npm test` 10 pruebas en verde, `tsc --noEmit` limpio, `npm run build` OK; frontend `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde.
+### Fase C — Pantallas de experiencia faltantes
 
-## 4. Configuración que el usuario necesita hacer (fallas del entorno detectadas en esta sesión)
+**Objetivo:** Completar el recorrido de usuario con todas las pantallas necesarias.
 
-Estas dos son **bloqueantes** de la Fase 0; el resto es lo habitual de la guía:
+1. **WelcomeScreen:** Ilustración de calma, explicación de la promesa, botón "Empezar", demo háptica opcional.
+2. **DestinationScreen:** Buscador real con sugerencias, mapa interactivo, selección visual de parada.
+3. **AlarmWakeScreen:** Pantalla de alto contraste cuando suena la alarma, botones grandes (≥ 80dp), "Ya desperté", "Posponer 1 min", "Posponer 5 min", parada de sonido.
+4. **HistoryScreen:** Lista de recientes con tarjetas deslizables, favoritos con estrella, botón "Repetir alarma".
+5. **SettingsScreen:** Modo claro/oscuro/sistema, fuerza de háptica, volumen de alarma, umbral de perfil de ubicación, notificaciones.
+6. **PermissionScreen:** Explicación visual de permisos de ubicación y notificaciones, con alternativa "solo mientras uso la app".
 
-1. **`C:\Users\oscar\alias.cmd` no existe pero el registro lo invoca.** El `AutoRun` de CMD de este usuario (`HKCU\Software\Microsoft\Command Processor → AutoRun = C:\Users\oscar\alias.cmd`) apunta a un archivo que ya no está, y **Esto ROMPE el arranque de `flutter.bat`** (falló exactamente con ese error). Elegir una de las dos:
-   - Eliminarlo: en PowerShell, `Remove-ItemProperty 'HKCU:\Software\Microsoft\Command Processor' -Name AutoRun`
-   - O rehacer el archivo vacío: `Set-Content -Path 'C:\Users\oscar\alias.cmd' -Value '@echo off' -Encoding Ascii`
-2. **El bootstrap inicial de Flutter quedó a medias.** `flutter --version` se cortó a los 4 minutos: el log `C:\Users\oscar\tools\flutter-init.err.log` muestra "Building flutter tool... Running pub upgrade..."; el Dart SDK en caché ya existe pero falta el archivo `version`. Después de arreglar el punto 1, correr **una sola vez y esperar a que termine** (puede tardar >10 min): `C:\Users\oscar\tools\flutter\bin\flutter.bat --version`. Si vuelve a quedarse atascado, `flutter.bat --version 2>&1 | Out-File C:\Users\oscar\tools\flutter-init.err.log -Append` y revisar el log.
-3. **Android** (como marca la guía): Android Studio con SDK/Platform-Tools/Build-Tools/Emulator, licencias con `flutter doctor --android-licenses` y un emulador Pixel.
-4. **Docker Desktop no está instalado** (y `docker` tampoco está en PATH). Hace falta solo para `backend/compose.yaml` (Postgres). Para la Fase 5 sin Docker, alternativa: instalar PostgreSQL nativo y aplicar la migración con `psql -f migrations/001_initial.sql`.
-5. **PATH de Flutter permanente**: agregar `C:\Users\oscar\tools\flutter\bin` al Path del usuario (para no anteceder `$env:Path` en cada sesión).
-6. **Opcional iOS**: requiere macOS + Xcode; en Windows basta con dejar el código listo.
+**Criterios de aceptación:**
+- Todas las pantallas accesibles desde la navegación
+- Estados vacíos con ilustración y acción clara
+- Accesibilidad: lectores de pantalla, contraste WCAG AA, touch target ≥ 48dp
 
-## 5. Criterios de aceptación antes de beta (de la guía, aún vigentes)
+---
+
+### Fase D — Funcionalidades avanzadas de alarma
+
+**Objetivo:** Hacer la alarma realmente útil en situaciones reales.
+
+1. **Posponer (snooze):** 1, 3, 5 minutos con reprogramación del temporizador.
+2. **Editar viaje armado:** Cambiar margen o destino sin cancelar y re-armar.
+3. **Temporizador manual:** Entrada de tiempo estimado si GPS falla (último recurso).
+4. **Notificaciones con acciones:** Android notification buttons (Confirmar / Posponer).
+5. **Widget de bloqueo / Live Activity:** Progreso visible sin desbloquear (Android ongoing notification, iOS Live Activity).
+6. **Exportar historial:** Compartir resumen de viajes (sin coordenadas precisas).
+
+**Criterios de aceptación:**
+- Posponer reprograma la alarma correctamente
+- Editar viaje persiste cambios en repositorio cifrado
+- Notificaciones con acciones responden en Android
+
+---
+
+### Fase E — Calidad, pruebas y pulido final
+
+**Objetivo:** App lista para beta con calidad excepcional.
+
+1. **Pruebas widget:** Al menos 1 por pantalla (10+ pruebas widget).
+2. **Pruebas de oro (golden):** Capturas de referencia de pantallas clave.
+3. **Pruebas de integración:** Viaje simulado completo (armar → GPS → alarma → posponer → completar).
+4. **Pruebas de accesibilidad:** Lectores de pantalla, navegación por teclado, contraste.
+5. **Pulido de micro-interacciones:** Feedback táctil en todos los botones, sonidos de confirmación, estados de carga.
+6. **Documentación:** README actualizado, guía de contribución, guía de diseño.
+
+**Criterios de aceptación:**
+- Cobertura de pruebas > 80%
+- Todas las pruebas pasando en CI
+- Accesibilidad WCAG AA verificada
+- App lista para distribución en Play Store / App Store
+
+---
+
+## 5. Estimación de esfuerzo
+
+| Fase | Complejidad | Tiempo estimado | Entregable principal |
+|---|---|---|---|
+| **A** — Sistema de diseño | ✅ Completa | 1 semana | Design system completo (tokens, tema, componentes base) |
+| **B** — Arquitectura de presentación | Alta | 2-3 semanas | View models, pantallas divididas, navegación |
+| **C** — Pantallas faltantes | Media | 2 semanas | 6 pantallas nuevas con estados vacíos |
+| **D** — Funcionalidades avanzadas | Media | 1-2 semanas | Posponer, editar, notificaciones, widget |
+| **E** — Calidad y pulido | Media | 1-2 semanas | Pruebas, golden, accesibilidad, docs |
+| **Total** | **Alta** | **6-10 semanas** | **App sobresaliente lista para beta** |
+
+---
+
+## 6. Recomendación de diseño visual (anti-genérico)
+
+Para evitar el aspecto "genérico de Flutter":
+
+- **Paleta:** Verde bosque profundo como primario, crema cálido como superficie clara, carbón como superficie oscura. Naranja quemado solo para alarma.
+- **Tipografía:** Serif para títulos (elegante, editorial), sans para cuerpo (legible, neutral).
+- **Formas:** Bordes redondeados grandes (24-32dp), sombras suaves y difusas, sin bordes agudos.
+- **Movimiento:** Curvas de easing personalizadas, duraciones 300-500ms.
+- **Ilustraciones:** Estilo editorial, trazo fino, colores planos con textura sutil.
+- **Espaciado:** Generoso, respirando, mínimo 24dp de padding en pantallas.
+
+---
+
+## 7. Pasos inmediatos recomendados (Fase A ✅ completada)
+
+1. **Esta semana:** Dividir `home_screen.dart` en `lib/presentation/screens/` con view models (Fase B).
+2. **Próximas 2 semanas:** Implementar `WelcomeScreen` y `AlarmWakeScreen` con animaciones (Fase B/C).
+3. **Próximas 3 semanas:** Implementar `DestinationScreen` con mapa y búsqueda real (Fase C).
+4. **Próximas 2 semanas:** `HistoryScreen`, `SettingsScreen`, posponer, editar viaje (Fase C/D).
+5. **Última semana:** Pruebas widget, golden, accesibilidad, documentación (Fase E).
+
+---
+
+## 7. Configuración que el usuario necesita hacer (fallas del entorno)
+
+Ver `GUIA_DE_EJECUCION.md` para instrucciones completas de ejecución. Los puntos bloqueantes del entorno están documentados en §4 de `GUIA_DE_PUESTA_EN_MARCHA.md`.
+
+---
+
+## 8. Criterios de aceptación antes de beta (de la guía, aún vigentes)
 
 - Una alarma armada se recupera tras cerrar/reiniciar app o teléfono, dentro de las limitaciones del SO.
 - Con red ausente y último fix válido, el aviso se **adelanta** —nunca retrasa— conforme crece la incertidumbre.
 - Cancelar / confirmar / posponer accesibles desde el estado de alarma.
 - `flutter analyze`, `flutter test` y pruebas de ruta simulada en verde en cada cambio.
 - Ninguna coordenada precisa sale en analítica ni en la capa comunitaria.
+- **Nuevo:** Diseño visual excepcional, limpio y no genérico, verificado en todas las pantallas.
+- **Nuevo:** Accesibilidad WCAG AA (contraste, touch target ≥ 48dp, lectores de pantalla).
