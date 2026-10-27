@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:punto_y_coma/design/design.dart';
-import 'package:punto_y_coma/design/theme/app_theme.dart';
 import 'package:punto_y_coma/presentation/widgets/accessible_button.dart';
 import 'helpers/test_fonts.dart';
 
@@ -175,27 +174,27 @@ void main() {
     testWidgets('PuntoButton tiene semántica de botón', (tester) async {
       await _pumpButton(tester, label: 'Mi botón');
       final semantics = tester.getSemantics(find.byType(PuntoButton));
-      expect(semantics, containsSemantics(isButton: true));
+      expect(semantics, isSemantics(isButton: true));
       expect(semantics.label, contains('Mi botón'));
     });
 
     testWidgets('PuntoOutlinedButton tiene semántica de botón', (tester) async {
       await _pumpOutlinedButton(tester, label: 'Outlined');
       final semantics = tester.getSemantics(find.byType(PuntoOutlinedButton));
-      expect(semantics, containsSemantics(isButton: true));
+      expect(semantics, isSemantics(isButton: true));
       expect(semantics.label, contains('Outlined'));
     });
 
     testWidgets('SwitchListTile tiene semántica de switch', (tester) async {
       await _pumpSwitchListTile(tester);
       final semantics = tester.getSemantics(find.byType(SwitchListTile));
-      expect(semantics, containsSemantics(hasToggledState: true));
+      expect(semantics, isSemantics(hasToggledState: true));
     });
 
     testWidgets('Slider tiene semántica de slider', (tester) async {
       await _pumpSlider(tester);
       final semantics = tester.getSemantics(find.byType(Slider));
-      expect(semantics, containsSemantics(isSlider: true));
+      expect(semantics, isSemantics(isSlider: true));
     });
   });
 }
