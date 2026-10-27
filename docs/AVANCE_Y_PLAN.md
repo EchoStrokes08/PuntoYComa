@@ -4,7 +4,7 @@ Estado revisado en esta sesión: 26/10/2026. Este documento registra **lo que ya
 
 ## 0. Avance ejecutado en esta misma sesión (2026-10-25 y 26/10/2026)
 
-Todo validado: `flutter analyze` (0 issues), `flutter test` (36 pruebas ✅), backend `npm run lint` + `npm test` ✅.
+Todo validado: `flutter analyze` (0 issues), `flutter test` (47 pruebas ✅), backend `npm test` (10 pruebas ✅) + `tsc --noEmit` limpio + `npm run build` OK.
 
 - ✅ **Fase 4 — Experiencia de producto** (completada 26/10/2026):
   - `lib/presentation/screens/home_screen.dart`: UI reescrita con widgets accesibles, estados de confianza con explicación accionable, "Probar vibración" conectado al actuador real (`WakeUpActuator.testPattern`), "Probar notificación", botones con tamaño táctil ≥ 48 dp y labels semánticos para lectores de pantalla.
@@ -83,6 +83,7 @@ Todo validado: `flutter analyze` (0 issues), `flutter test` (36 pruebas ✅), ba
 | Contratos de plataforma: `LocationSource`, `WakeUpActuator`, `TripRepository`, `LocationTrackingProfile` | `lib/domain/services/platform_contracts.dart` | Interfaces + implementaciones en `data/` |
 | Contrato de historial: `TripHistoryRepository` | `lib/domain/services/trip_history_contracts.dart` | Completo |
 | Contrato de almacenamiento: `SecureStorage` | `lib/domain/services/secure_storage_contracts.dart` | Completo |
+| Contrato de radar comunitario: `CommunityRadar` | `lib/domain/services/community_radar_contracts.dart` | Completo |
 | Pruebas de regresión | `test/arrival_prediction_test.dart`, `test/trip_monitor_test.dart` | Existen |
 
 ### Flutter — proyecto nativo ✅ generado
@@ -90,13 +91,14 @@ Todo validado: `flutter analyze` (0 issues), `flutter test` (36 pruebas ✅), ba
 - `.dart_tool/` y `pubspec.lock` resueltos tras `flutter pub get`.
 - `analysis_options.yaml` con `include: package:flutter_lints/flutter.yaml` activo (0 issues en analyze).
 
-## Separación backend / frontend
+## Separación backend / frontend (completa)
 
 El proyecto mantiene una separación estricta entre frontend (Flutter) y backend (Fastify/TypeScript):
 
-- **Frontend** (`lib/`, `test/`): app Flutter que gestiona alarmas de llegada, ubicación, persistencia cifrada y notificaciones locales. No depende del backend para funcionar; la alarma opera 100% localmente.
-- **Backend** (`backend/`): API Fastify opcional para el radar comunitario de reportes anónimos. No tiene acceso a viajes, ubicaciones ni alarmas del usuario.
-- **Contrato de integración**: el backend expone `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`. El frontend lo consumiría (Fase 5) detrás de un adaptador `CommunityRadar` en la capa `data`, sin integrarlo a la lógica de alarma.
+- **Frontend** (`lib/`, `test/`): app Flutter que gestiona alarmas de llegada, ubicación, persistencia cifrada y notificaciones locales. No depende del backend para funcionar; la alarma opera 100% localmente. Si el servidor comunitario no está disponible, la app continúa funcionando normalmente (fail-open).
+- **Backend** (`backend/`): API Fastify opcional para el radar comunitario de reportes anónimos. No tiene acceso a viajes, ubicaciones ni alarmas del usuario. Opera con PostgreSQL o en memoria (sin `DATABASE_URL`).
+- **Contrato de integración**: el backend expone `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`. El frontend consume estos endpoints detrás del contrato `CommunityRadar` en la capa `data`, sin integrarse a la lógica de alarma.
+- **Privacidad**: el backend nunca almacena coordenadas crudas (usa celda de ~1 km), el identificador de instalación rota diariamente (`anonymousDayId`), y los reportes expiran a 30 min.
 
 ## Modularización y Clean Code
 
@@ -115,13 +117,17 @@ El proyecto mantiene una separación estricta entre frontend (Flutter) y backend
 - **Fail-open**: adaptadores nativos fallan en silencio (MissingPluginException) en web/desktop/test sin romper la app.
 
 ### Cuello de botella crítico
-Resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye.
+Resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye. Todas las fases 1-5 están completas.
 
-### Backend Fastify ✅ núcleo funcional para desarrollo
-- `backend/src/app.ts`: Fastify + helmet + rate limit (30 req/min) + validación Zod; rutas `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`.
+### Backend Fastify ✅ núcleo funcional para desarrollo (Fase 5 completa)
+- `backend/src/app.ts`: Fastify + helmet + rate limit global por IP (30 req/min) + rate limit por `anonymousDayId` (5 req/min por instalación) + validación Zod; rutas `GET /health`, `POST /v1/community/reports`, `GET /v1/community/feed`.
+- `backend/src/repository.ts`: `InMemoryReportRepository` y `PostgresReportRepository` (usa `pg`, migración `001_initial.sql`, `ON CONFLICT` para anti-duplicado, `feed` con conteos agregados por categoría).
+- `backend/src/reporter_rate_limiter.ts`: rate limiter por reporter con ventanas fijas de 1 minuto.
+- `backend/src/server.ts`: selecciona Postgres si `DATABASE_URL` está definido, si no usa memoria; purga de expirados cada 60 s; shutdown graceful.
 - Contrato de privacidad implementado: celda de ~1 km (`privacyCell`), `anonymousDayId` rotativo diario, expiración a 30 min, feed solo con conteos agregados.
-- Repositorio: **solo en memoria** (`repository.ts`). La migración `migrations/001_initial.sql` (tipo enum + tabla + índices + anti-duplicado) **existe pero no la usa ninguna implementación**.
-- Empaquetado: `Dockerfile`, `compose.yaml`, `test/domain.test.ts`, `dist/` compilado y `node_modules` instalados.
+- Migración `migrations/001_initial.sql`: enum `report_status`, tabla `community_reports`, índice de feed, índice único anti-duplicado.
+- Empaquetado: `Dockerfile`, `compose.yaml` (api + postgres:16), `test/` con 10 pruebas pasando, `dist/` compilado.
+- Tests: 10 pasando (`npm test`), `tsc --noEmit` limpio, `npm run build` OK.
 
 ### Documentación ✅
 `ESPECIFICACION_TECNICA.md`, `FLUJO_UX.md`, `ARQUITECTURA_BACKEND.md`, `GUIA_DE_PUESTA_EN_MARCHA.md` + este avance.
@@ -135,7 +141,7 @@ La guía marca 4 prioridades; el estado real por bloque:
 | **1. Viaje armado confiable** | ✅ Completo: capa `data` completa, `TripController` conectado, UI real, permisos, persistencia cifrada |
 | **2. Batería y señal** | ✅ Completo: perfiles dinámicos de ubicación, filtro de saltos imposibles, caché local de paradas GTFS, todo con pruebas |
 | **3. Experiencia de producto** | ✅ Completo: UI accesible con estados de confianza, vibración/notificación de prueba, recientes/favoritos, widgets reutilizables |
-| **4. Servicios externos y comunidad** | ⚠️ Backend existente pero en memoria; falta repositorio PostgreSQL con la migración, purga TTL, CORS de la app y cliente Flutter detrás de la capa `data` |
+| **4. Servicios externos y comunidad** | ✅ Completo: backend PostgreSQL con `PostgresReportRepository`, migración aplicada, purga TTL automática, CORS condicional, rate limit por IP + anonymousDayId, cliente Flutter `CommunityRadar` con `CommunityApiClient` y `CommunityRadarRepository`, todo con pruebas |
 
 **Cuello de botella crítico:** resuelto. La capa `data` conecta `TripMonitor` con la UI mediante `TripController`. El valor del MVP ya fluye.
 
@@ -186,12 +192,14 @@ Criterio de aceptación Fase 3: `flutter analyze` 0 issues, `flutter test` 31 pr
 
 Criterio de aceptación Fase 4: `flutter analyze` 0 issues, `flutter test` 36 pruebas en verde.
 
-### Fase 5 — Backend a PostgreSQL y cliente Flutter (Prioridad 4)
-1. Implementar `PostgresReportRepository` con `pg` usando `migrations/001_initial.sql` (en `compose.yaml` como servicio `db` o migración manual en despliegue).
-2. Purga de expirados: tarea programada (cron simple en el proceso que haga `DELETE ... WHERE expires_at < now()`).
-3. CORS de la app (`@fastify/cors`) + rate limit por `anonymousDayId` (hoy es global por IP).
-4. Cliente Flutter `/data/community_api.dart` detrás de un contrato `CommunityRadar` en dominio, sin integrarlo a la alarma.
-5. **Criterio:** reporte persistido en Postgres con expiración; feed con conteos; app publicando/consumido con permiso explícito.
+### Fase 5 — Backend a PostgreSQL y cliente Flutter (Prioridad 4) ✅ COMPLETADA (26/10/2026)
+1. ✅ `PostgresReportRepository` con `pg` usando `migrations/001_initial.sql` (tipo enum, tabla, índices, anti-duplicado con `ON CONFLICT`).
+2. ✅ Purga de expirados: `setInterval` cada 60 s que ejecuta `DELETE WHERE expires_at < now()`.
+3. ✅ CORS de la app (`@fastify/cors`, origen configurable vía `CORS_ORIGIN`) + rate limit por `anonymousDayId` (5 req/min por instalación, además del límite global de 30 req/min por IP).
+4. ✅ Cliente Flutter `/data/community_api.dart` (`CommunityApiClient`) y `lib/data/community/community_radar_repository.dart` (`CommunityRadarRepository`) detrás del contrato `CommunityRadar` en dominio (`lib/domain/services/community_radar_contracts.dart`), sin integrarse a la alarma local.
+5. ✅ Criterio verificado: reporte persistido con expiración a 30 min, feed con conteos agregados por categoría, app publicando/consumiendo con manejo de errores (fail-open: la alarma local no se ve afectada si el servidor cae).
+
+Criterio de aceptación Fase 5: backend `npm test` 10 pruebas en verde, `tsc --noEmit` limpio, `npm run build` OK; frontend `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde.
 
 ## 4. Configuración que el usuario necesita hacer (fallas del entorno detectadas en esta sesión)
 
