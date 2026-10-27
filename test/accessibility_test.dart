@@ -175,27 +175,27 @@ void main() {
     testWidgets('PuntoButton tiene semántica de botón', (tester) async {
       await _pumpButton(tester, label: 'Mi botón');
       final semantics = tester.getSemantics(find.byType(PuntoButton));
-      expect(semantics.hasFlag(SemanticsFlag.button), isTrue);
+      expect(semantics, containsSemantics(isButton: true));
       expect(semantics.label, contains('Mi botón'));
     });
 
     testWidgets('PuntoOutlinedButton tiene semántica de botón', (tester) async {
       await _pumpOutlinedButton(tester, label: 'Outlined');
       final semantics = tester.getSemantics(find.byType(PuntoOutlinedButton));
-      expect(semantics.hasFlag(SemanticsFlag.button), isTrue);
+      expect(semantics, containsSemantics(isButton: true));
       expect(semantics.label, contains('Outlined'));
     });
 
     testWidgets('SwitchListTile tiene semántica de switch', (tester) async {
       await _pumpSwitchListTile(tester);
       final semantics = tester.getSemantics(find.byType(SwitchListTile));
-      expect(semantics.hasFlag(SemanticsFlag.toggleable), isTrue);
+      expect(semantics, containsSemantics(hasToggledState: true));
     });
 
     testWidgets('Slider tiene semántica de slider', (tester) async {
       await _pumpSlider(tester);
       final semantics = tester.getSemantics(find.byType(Slider));
-      expect(semantics.hasFlag(SemanticsFlag.slider), isTrue);
+      expect(semantics, containsSemantics(isSlider: true));
     });
   });
 }
@@ -311,21 +311,6 @@ Future<void> _pumpSlider(WidgetTester tester) async {
   );
 }
 
-Future<void> _pumpScreen(WidgetTester tester, Widget screen) async {
-  await tester.pumpWidget(
-    MediaQuery(
-      data: const MediaQueryData(size: Size(411, 866)),
-      child: MaterialApp(
-        theme: PuntoTheme.light(),
-        darkTheme: PuntoTheme.dark(),
-        themeMode: ThemeMode.light,
-        home: screen,
-      ),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 Widget _wrapInApp(Widget child) {
   return MediaQuery(
     data: const MediaQueryData(size: Size(411, 866)),
@@ -336,124 +321,4 @@ Widget _wrapInApp(Widget child) {
       home: Scaffold(body: child),
     ),
   );
-}
-
-// ── Pantallas simplificadas para pruebas de accesibilidad ──
-
-class _WelcomeAccessibility extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return PuntoScaffold(
-      header: const PuntoScreenHeader(title: 'PuntoYcoma'),
-      child: Column(
-        children: [
-          PuntoButton(
-            fullWidth: true,
-            height: 56,
-            onPressed: () {},
-            label: 'Crear alarma de llegada',
-            child: const Text('Crear alarma de llegada'),
-          ),
-          const SizedBox(height: 16),
-          PuntoButton(
-            fullWidth: true,
-            height: 56,
-            onPressed: () {},
-            label: 'Probar',
-            child: const Text('Probar'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreparationAccessibility extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return PuntoScaffold(
-      header: const PuntoScreenHeader(title: 'Prepara tu descanso'),
-      child: Column(
-        children: [
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 3, label: Text('3 min')),
-              ButtonSegment(value: 4, label: Text('4 min')),
-              ButtonSegment(value: 5, label: Text('5 min')),
-            ],
-            selected: {4},
-            onSelectionChanged: (_) {},
-          ),
-          SwitchListTile(
-            title: const Text('Sonido al final'),
-            value: true,
-            onChanged: (_) {},
-          ),
-          PuntoButton(
-            fullWidth: true,
-            height: 56,
-            onPressed: () {},
-            label: 'Armar alarma',
-            child: const Text('Armar alarma'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AlarmWakeAccessibility extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return PuntoScaffold(
-      backgroundColor: PuntoColors.alarmScreen,
-      child: Column(
-        children: [
-          const Spacer(),
-          PuntoButton(
-            fullWidth: true,
-            height: 56,
-            onPressed: () {},
-            label: 'Posponer 1 min',
-            child: const Text('1 min'),
-          ),
-          const SizedBox(height: 12),
-          PuntoButton(
-            fullWidth: true,
-            height: 56,
-            onPressed: () {},
-            label: 'Ya desperté',
-            backgroundColor: PuntoColors.alarmInk,
-            foregroundColor: PuntoColors.alarmScreen,
-            child: const Text('Ya desperté'),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsAccessibility extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return PuntoScaffold(
-      header: const PuntoScreenHeader(title: 'Ajustes'),
-      child: Column(
-        children: [
-          SwitchListTile(
-            title: const Text('Sonido al final'),
-            value: true,
-            onChanged: (_) {},
-          ),
-          SwitchListTile(
-            title: const Text('Notificaciones push'),
-            value: true,
-            onChanged: (_) {},
-          ),
-          Slider(value: 1.0, onChanged: (_) {}),
-        ],
-      ),
-    );
-  }
 }
