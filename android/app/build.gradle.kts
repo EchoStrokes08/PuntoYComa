@@ -1,3 +1,19 @@
+import java.util.Properties
+
+// La clave de Google Maps NO se versiona: se lee de android/local.properties
+// (ignorado por git), de la variable de entorno MAPS_API_KEY o de
+// -PMAPS_API_KEY=... en la línea de comandos.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val mapsApiKey: String = (
+    localProperties.getProperty("MAPS_API_KEY")
+        ?: (project.findProperty("MAPS_API_KEY") as String?)
+        ?: System.getenv("MAPS_API_KEY")
+        ?: ""
+)
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -33,6 +49,7 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

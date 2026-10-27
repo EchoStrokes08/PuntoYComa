@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/location/nearby_origin.dart';
 import '../../data/routing/local_stop_cache.dart';
+import '../../data/routing/osm_stop_repository.dart';
 import '../../domain/entities/trip.dart';
 import '../../design/design.dart';
 import '../state/punto_scope.dart';
@@ -42,8 +44,11 @@ class _DestinationScreenState extends State<DestinationScreen> {
       stopCache:
           PuntoScope.maybeOf(context)?.controller.stopCache ??
           LocalStopCache(),
+      remoteStops: OsmStopRepository(),
+      resolveOrigin: const NearbyOrigin().resolve,
     );
     _viewModel!.loadRecents();
+    _viewModel!.loadNearbyFromOrigin();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -133,7 +138,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
               // ── Mapa ────────────────────────────────────────────────
               PuntoMapView(
-                stops: viewModel.recentStops,
+                stops: viewModel.mapStops,
                 selectedStop: viewModel.selectedStop,
                 height: 220,
                 onStopTapped: (stop) {
@@ -142,12 +147,17 @@ class _DestinationScreenState extends State<DestinationScreen> {
                   viewModel.clearSearch();
                   _searchFocus.unfocus();
                 },
-                initialPosition: viewModel.recentStops.isNotEmpty
+                initialPosition: viewModel.origin != null
                     ? LatLng(
-                        viewModel.recentStops.first.latitude,
-                        viewModel.recentStops.first.longitude,
+                        viewModel.origin!.latitude,
+                        viewModel.origin!.longitude,
                       )
-                    : null,
+                    : (viewModel.recentStops.isNotEmpty
+                        ? LatLng(
+                            viewModel.recentStops.first.latitude,
+                            viewModel.recentStops.first.longitude,
+                          )
+                        : null),
               ),
               const SizedBox(height: PuntoSpacing.lg),
 
