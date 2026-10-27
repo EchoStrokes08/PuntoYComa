@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:punto_y_coma/design/design.dart';
-import 'package:punto_y_coma/design/theme/app_theme.dart';
 import '../helpers/test_fonts.dart';
 
 /// Fase E: Pruebas de oro (golden tests) para pantallas clave.

@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:punto_y_coma/domain/entities/trip.dart';
-import 'package:punto_y_coma/domain/services/wake_up_policy.dart';
 
 import 'helpers/test_app.dart';
 
