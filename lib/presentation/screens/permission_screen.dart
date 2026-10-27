@@ -7,6 +7,7 @@ import '../../data/location/geolocator_location_source.dart';
 import '../../data/persistence/secure_trip_repository.dart';
 import '../../data/persistence/trip_history_repository.dart';
 import '../../domain/entities/trip.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../design/design.dart';
 import '../animations/animations.dart';
 import '../state/punto_scope.dart';
@@ -32,8 +33,8 @@ class _PermissionScreenState extends State<PermissionScreen> {
   bool _locationDenied = false;
   bool _permanentlyDenied = false;
 
-  late GeolocatorLocationSource _locationSource;
-  late LocalNotificationWakeUpActuator _actuator;
+  late LocationSource _locationSource;
+  late WakeUpActuator _actuator;
   late TripController _controller;
   bool _ownsController = false;
 
@@ -76,13 +77,14 @@ class _PermissionScreenState extends State<PermissionScreen> {
     final granted = await _locationSource.ensurePermission();
     if (!mounted) return;
     if (!granted) {
-      final permission = await Geolocator.checkPermission();
+      // Estado del permiso vía el contrato: reversible o bloqueado. Si la
+      // plataforma no responde, el contrato devuelve denegado reversible.
+      final status = await _locationSource.checkPermission();
       if (!mounted) return;
       setState(() {
         _requesting = false;
         _locationDenied = true;
-        _permanentlyDenied =
-            permission == LocationPermission.deniedForever;
+        _permanentlyDenied = status == LocationPermissionStatus.deniedForever;
       });
       return;
     }

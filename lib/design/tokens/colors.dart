@@ -39,11 +39,18 @@ class PuntoColors {
   // ── Texto ─────────────────────────────────────────────────────────────
   static const Color onSurface = Color(0xFF1C1B19);
   static const Color onSurfaceVariant = Color(0xFF494541);
-  static const Color onSurfaceLow = Color(0xFF79746E);
+  /// Gris cálido de tinta secundaria. Calibrado para ≥ 4.5:1 sobre la
+  /// superficie crema (y sobre blanco): WCAG AA para texto normal.
+  static const Color onSurfaceLow = Color(0xFF6E6A64);
 
   // ── Acento de alarma ──────────────────────────────────────────────────
   /// Naranja quemado: urgencia, atención, despertar. Solo para estados de alarma.
   static const Color alarm = Color(0xFFD9730D);
+  /// Fondo de la pantalla de alarma a pantalla completa: la misma familia
+  /// quemada pero oscurecida para garantizar ≥ 4.5:1 con texto blanco
+  /// de cualquier tamaño (WCAG AA). El naranja claro solo se usa en
+  /// superficies grandes de aviso, nunca detrás de texto pequeño.
+  static const Color alarmScreen = Color(0xFFA85303);
   static const Color alarmContainer = Color(0xFFFDE8CC);
   static const Color onAlarm = Color(0xFFFFFFFF);
   /// Tinta oscura sobre botones blancos de la pantalla de alarma.

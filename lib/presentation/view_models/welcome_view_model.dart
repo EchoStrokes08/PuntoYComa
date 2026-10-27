@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/alerts/local_notification_wake_up_actuator.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../domain/services/wake_up_policy.dart';
 
 /// ViewModel de la pantalla de bienvenida.
@@ -9,7 +9,7 @@ import '../../domain/services/wake_up_policy.dart';
 class WelcomeViewModel extends ChangeNotifier {
   WelcomeViewModel({required this.actuator});
 
-  final LocalNotificationWakeUpActuator actuator;
+  final WakeUpActuator actuator;
 
   bool _vibrationDemoPlayed = false;
   bool _isDemoPlaying = false;

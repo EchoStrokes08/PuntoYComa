@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../../data/alerts/local_notification_wake_up_actuator.dart';
-import '../../data/location/geolocator_location_source.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../domain/services/trip_history_contracts.dart';
 import 'trip_controller.dart';
 
@@ -11,6 +10,10 @@ import 'trip_controller.dart';
 /// posponer y confirmar la alarma ocurren sobre el mismo estado. Sin este
 /// alcance cada pantalla creaba su propio controlador y el viaje armado se
 /// perdía al navegar.
+///
+/// Los campos usan los contratos de dominio ([WakeUpActuator], [LocationSource]),
+/// no las implementaciones nativas: así las pruebas pueden inyectar falsos
+/// que no tocan plugins.
 class PuntoScope extends InheritedNotifier<TripController> {
   const PuntoScope({
     super.key,
@@ -21,8 +24,8 @@ class PuntoScope extends InheritedNotifier<TripController> {
     required super.child,
   }) : super(notifier: controller);
 
-  final LocalNotificationWakeUpActuator actuator;
-  final GeolocatorLocationSource locationSource;
+  final WakeUpActuator actuator;
+  final LocationSource locationSource;
   final TripHistoryRepository historyRepository;
 
   TripController get controller => notifier!;

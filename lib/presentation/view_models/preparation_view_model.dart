@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/alerts/local_notification_wake_up_actuator.dart';
 import '../../domain/entities/trip.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../domain/services/wake_up_policy.dart';
 
 /// ViewModel de la pantalla de preparación.
@@ -11,7 +11,7 @@ import '../../domain/services/wake_up_policy.dart';
 class PreparationViewModel extends ChangeNotifier {
   PreparationViewModel({required this.actuator});
 
-  final LocalNotificationWakeUpActuator actuator;
+  final WakeUpActuator actuator;
 
   int _leadMinutes = 4;
   bool _soundAtEnd = false;

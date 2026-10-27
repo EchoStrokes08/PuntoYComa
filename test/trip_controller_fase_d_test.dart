@@ -20,6 +20,13 @@ class _FakeLocationSource implements LocationSource {
   Stream<LocationSample> watch(LocationTrackingProfile profile) =>
       controller.stream;
 
+  @override
+  Future<bool> ensurePermission({bool requestIfDenied = true}) async => true;
+
+  @override
+  Future<LocationPermissionStatus> checkPermission() async =>
+      LocationPermissionStatus.granted;
+
   void emit(LocationSample sample) => controller.add(sample);
 }
 
@@ -94,6 +101,12 @@ class _FakeActuator implements WakeUpActuator {
 
   @override
   Future<void> testNotification({bool playSound = false}) async {}
+
+  @override
+  void configure({required bool soundAtEnd}) {}
+
+  @override
+  Future<bool> requestPermissions() async => true;
 }
 
 class _RecordingProgressSink implements TripProgressSink {

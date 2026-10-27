@@ -28,17 +28,22 @@ class DestinationScreen extends StatefulWidget {
 }
 
 class _DestinationScreenState extends State<DestinationScreen> {
-  late DestinationViewModel _viewModel;
+  DestinationViewModel? _viewModel;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_viewModel != null) return;
+    // Caché compartido con el controlador: una sola instancia de paradas
+    // sirve a la pantalla de destino y a la alarma (estado único de la app).
     _viewModel = DestinationViewModel(
-      stopCache: LocalStopCache(),
+      stopCache:
+          PuntoScope.maybeOf(context)?.controller.stopCache ??
+          LocalStopCache(),
     );
-    _viewModel.loadRecents();
+    _viewModel!.loadRecents();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -46,22 +51,24 @@ class _DestinationScreenState extends State<DestinationScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocus.dispose();
-    _viewModel.dispose();
+    _viewModel?.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    _viewModel.searchStops(_searchController.text);
+    _viewModel?.searchStops(_searchController.text);
   }
 
   void _selectStop(CachedStop stop) {
-    _viewModel.selectStop(stop);
+    _viewModel?.selectStop(stop);
   }
 
   Future<void> _confirmSelection() async {
-    final stop = _viewModel.selectedStop;
+    final viewModel = _viewModel;
+    if (viewModel == null) return;
+    final stop = viewModel.selectedStop;
     if (stop == null) return;
-    await _viewModel.saveRecent(stop);
+    await viewModel.saveRecent(stop);
     if (!mounted) return;
     if (widget.editing) {
       final scope = PuntoScope.maybeOf(context);
@@ -77,14 +84,18 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = _viewModel;
+    if (viewModel == null) {
+      return const PuntoScaffold(child: SizedBox.shrink());
+    }
     return PuntoScaffold(
       header: PuntoScreenHeader(
         title: widget.editing ? 'Cambiar destino' : '¿Dónde te bajas?',
       ),
       bottomBar: AnimatedBuilder(
-        animation: _viewModel,
+        animation: viewModel,
         builder: (context, _) {
-          final hasSelection = _viewModel.selectedStop != null;
+          final hasSelection = viewModel.selectedStop != null;
           final cta = widget.editing
               ? 'Actualizar destino'
               : (hasSelection ? 'Confirmar destino' : 'Elige una parada');
@@ -114,7 +125,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
       child: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: AnimatedBuilder(
-          animation: _viewModel,
+          animation: viewModel,
           builder: (context, _) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -122,19 +133,19 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
               // ── Mapa ────────────────────────────────────────────────
               PuntoMapView(
-                stops: _viewModel.recentStops,
-                selectedStop: _viewModel.selectedStop,
+                stops: viewModel.recentStops,
+                selectedStop: viewModel.selectedStop,
                 height: 220,
                 onStopTapped: (stop) {
                   _selectStop(stop);
                   _searchController.clear();
-                  _viewModel.clearSearch();
+                  viewModel.clearSearch();
                   _searchFocus.unfocus();
                 },
-                initialPosition: _viewModel.recentStops.isNotEmpty
+                initialPosition: viewModel.recentStops.isNotEmpty
                     ? LatLng(
-                        _viewModel.recentStops.first.latitude,
-                        _viewModel.recentStops.first.longitude,
+                        viewModel.recentStops.first.latitude,
+                        viewModel.recentStops.first.longitude,
                       )
                     : null,
               ),
@@ -156,7 +167,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
                             icon: const Icon(Icons.clear_rounded),
                             onPressed: () {
                               _searchController.clear();
-                              _viewModel.clearSearch();
+                              viewModel.clearSearch();
                             },
                           )
                         : null,
@@ -166,30 +177,30 @@ class _DestinationScreenState extends State<DestinationScreen> {
               const SizedBox(height: PuntoSpacing.lg),
 
               // ── Contenido según búsqueda ─────────────────────────────
-              if (_viewModel.searchQuery.isNotEmpty) ...[
+              if (viewModel.searchQuery.isNotEmpty) ...[
                 const _SectionTitle('Resultados'),
-                if (_viewModel.searchResults.isEmpty)
+                if (viewModel.searchResults.isEmpty)
                   const _EmptyState(
                     icon: Icons.search_off_rounded,
                     title: 'No se encontraron paradas',
                     subtitle: 'Prueba con otro nombre o número de ruta.',
                   )
                 else
-                  ..._viewModel.searchResults.map(
+                  ...viewModel.searchResults.map(
                     (stop) => _StopCard(
                       stop: stop,
-                      selected: _viewModel.selectedStop?.id == stop.id,
+                      selected: viewModel.selectedStop?.id == stop.id,
                       onTap: () => _selectStop(stop),
                     ),
                   ),
               ] else ...[
                 // ── Paradas recientes ───────────────────────────────────
-                if (_viewModel.recentStops.isNotEmpty) ...[
+                if (viewModel.recentStops.isNotEmpty) ...[
                   const _SectionTitle('Recientes'),
-                  ..._viewModel.recentStops.map(
+                  ...viewModel.recentStops.map(
                     (stop) => _StopCard(
                       stop: stop,
-                      selected: _viewModel.selectedStop?.id == stop.id,
+                      selected: viewModel.selectedStop?.id == stop.id,
                       onTap: () => _selectStop(stop),
                     ),
                   ),
@@ -198,9 +209,9 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
                 // ── Paradas cercanas ────────────────────────────────────
                 const _SectionTitle('Cerca de ti'),
-                if (_viewModel.isLoading)
+                if (viewModel.isLoading)
                   const _SkeletonList()
-                else if (_viewModel.nearbyStops.isEmpty)
+                else if (viewModel.nearbyStops.isEmpty)
                   const _EmptyState(
                     icon: Icons.location_off_rounded,
                     title: 'Sin paradas cercanas guardadas',
@@ -208,10 +219,10 @@ class _DestinationScreenState extends State<DestinationScreen> {
                         'automáticamente.',
                   )
                 else
-                  ..._viewModel.nearbyStops.map(
+                  ...viewModel.nearbyStops.map(
                     (stop) => _StopCard(
                       stop: stop,
-                      selected: _viewModel.selectedStop?.id == stop.id,
+                      selected: viewModel.selectedStop?.id == stop.id,
                       onTap: () => _selectStop(stop),
                     ),
                   ),

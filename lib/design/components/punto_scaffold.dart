@@ -82,7 +82,17 @@ class PuntoScaffold extends StatelessWidget {
                   PuntoSpacing.pagePadding,
                   PuntoSpacing.md,
                 ),
-                child: bottomBar,
+                // Envuelto en una Column con mainAxisSize.min: el slot
+                // `bottomNavigationBar` del Scaffold da altura suelta pero
+                // finita (toda la pantalla); un Column con mainAxisSize.max
+                // (el valor por defecto) se expandía hasta cubrirla y el
+                // Scaffold aplastaba el cuerpo a 0, dejándolo invisible y
+                // sin taps.
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [bottomBar!],
+                ),
               ),
             ),
     );

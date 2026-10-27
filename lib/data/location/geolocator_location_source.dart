@@ -30,6 +30,7 @@ class GeolocatorLocationSource implements LocationSource {
 
   /// Returns true only when the app may obtain updates right now.
   /// Never throws: callers decide what to do on denial.
+  @override
   Future<bool> ensurePermission({bool requestIfDenied = true}) async {
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied && requestIfDenied) {
@@ -41,6 +42,24 @@ class GeolocatorLocationSource implements LocationSource {
     }
     return permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse;
+  }
+
+  /// Estado del permiso sin pedirlo. Si la plataforma no responde (o el
+  /// plugin no está disponible, p. ej. en pruebas), se informa como
+  /// denegado reversible para no bloquear al usuario.
+  @override
+  Future<LocationPermissionStatus> checkPermission() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      return switch (permission) {
+        LocationPermission.denied => LocationPermissionStatus.denied,
+        LocationPermission.deniedForever =>
+          LocationPermissionStatus.deniedForever,
+        _ => LocationPermissionStatus.granted,
+      };
+    } catch (_) {
+      return LocationPermissionStatus.denied;
+    }
   }
 
   LocationSettings _settingsFor(LocationTrackingProfile profile) =>

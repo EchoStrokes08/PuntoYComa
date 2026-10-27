@@ -8,6 +8,7 @@ import 'data/persistence/secure_trip_repository.dart';
 import 'data/persistence/trip_history_repository.dart';
 import 'data/routing/local_stop_cache.dart';
 import 'design/theme/app_theme.dart';
+import 'domain/services/platform_contracts.dart';
 import 'domain/services/trip_history_contracts.dart';
 import 'presentation/app_router.dart';
 import 'presentation/state/punto_scope.dart';
@@ -62,8 +63,8 @@ class PuntoYComaApp extends StatelessWidget {
   });
 
   final TripController controller;
-  final LocalNotificationWakeUpActuator actuator;
-  final GeolocatorLocationSource locationSource;
+  final WakeUpActuator actuator;
+  final LocationSource locationSource;
   final TripHistoryRepository historyRepository;
 
   @override

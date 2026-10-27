@@ -8,6 +8,7 @@ import '../../data/location/geolocator_location_source.dart';
 import '../../data/persistence/secure_trip_repository.dart';
 import '../../data/persistence/trip_history_repository.dart';
 import '../../domain/entities/trip.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../design/design.dart';
 import '../state/punto_scope.dart';
 import '../state/trip_controller.dart';
@@ -34,7 +35,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
   bool _initialized = false;
   bool _ownsController = false;
   late TripController _controller;
-  late LocalNotificationWakeUpActuator _actuator;
+  late WakeUpActuator _actuator;
   late AlarmWakeViewModel _viewModel;
   late AnimationController _pulseController;
   Timer? _clockTicker;
@@ -116,7 +117,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
     final onAlarm = context.onAlarm;
 
     return PuntoScaffold(
-      backgroundColor: context.alarm,
+      backgroundColor: PuntoColors.alarmScreen,
       header: PuntoBrandHeader(
         centered: true,
         dotColor: onAlarm,
@@ -172,7 +173,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
                       '${_formatCountdown(_viewModel.snoozeWakeUpTime)}.'
                   : 'Prepara tu salida. Confirma que estás despierto.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: onAlarm.withValues(alpha: 0.92),
+                    color: onAlarm,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -267,7 +268,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
               Text(
                 'Pospones restantes: ${_viewModel.snoozesRemaining}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: onAlarm.withValues(alpha: 0.75),
+                      color: onAlarm,
                     ),
               ),
             ] else
@@ -282,7 +283,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
                   children: [
                     Icon(
                       Icons.error_outline_rounded,
-                      color: onAlarm.withValues(alpha: 0.8),
+                      color: onAlarm.withValues(alpha: 0.92),
                       size: 20,
                     ),
                     const SizedBox(width: PuntoSpacing.xs),

@@ -13,12 +13,23 @@ import 'package:punto_y_coma/presentation/state/trip_controller.dart';
 class _FakeLocationSource implements LocationSource {
   final controller = StreamController<LocationSample>.broadcast(sync: true);
   LocationTrackingProfile? lastProfile;
+  bool permissionGranted = true;
 
   @override
   Stream<LocationSample> watch(LocationTrackingProfile profile) {
     lastProfile = profile;
     return controller.stream;
   }
+
+  @override
+  Future<bool> ensurePermission({bool requestIfDenied = true}) async =>
+      permissionGranted;
+
+  @override
+  Future<LocationPermissionStatus> checkPermission() async =>
+      permissionGranted
+          ? LocationPermissionStatus.granted
+          : LocationPermissionStatus.denied;
 
   void emit(LocationSample sample) => controller.add(sample);
 
@@ -83,7 +94,18 @@ class _FakeActuator implements WakeUpActuator {
   int cleared = 0;
   int testPatterns = 0;
   int testNotifications = 0;
+  bool soundAtEnd = false;
+  int requestPermissionsCalls = 0;
   void Function(WakeUpAction action)? actionHandler;
+
+  @override
+  void configure({required bool soundAtEnd}) => this.soundAtEnd = soundAtEnd;
+
+  @override
+  Future<bool> requestPermissions() async {
+    requestPermissionsCalls++;
+    return true;
+  }
 
   @override
   void onAction(void Function(WakeUpAction action)? handler) =>

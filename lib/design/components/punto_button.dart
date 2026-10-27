@@ -101,6 +101,14 @@ class _PuntoButtonState extends State<PuntoButton>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOut,
+            // Altura fija: el `Center` interior se expande a la altura máxima
+            // disponible cuando las restricciones son acotadas (p. ej. el
+            // `bottomNavigationBar` de un Scaffold deja altura suelta pero
+            // finita) y el botón deshabilitado terminaba cubriendo toda la
+            // pantalla y absorbiendo los taps del contenido. Con altura
+            // explícita el botón mide exactamente `height` en cualquier
+            // contexto y el contenido queda centrado de verdad.
+            height: widget.height,
             decoration: BoxDecoration(
               color: background,
               borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -272,6 +280,11 @@ class _PuntoOutlinedButtonState extends State<PuntoOutlinedButton>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOut,
+            // Altura fija por la misma razón que en PuntoButton: el `Center`
+            // interior se expande cuando las restricciones de altura son
+            // acotadas (p. ej. el `bottomNavigationBar` de un Scaffold) y
+            // crecía hasta cubrir la pantalla.
+            height: widget.height,
             decoration: BoxDecoration(
               color: widget.backgroundColor ?? Colors.transparent,
               borderRadius: BorderRadius.circular(widget.borderRadius),

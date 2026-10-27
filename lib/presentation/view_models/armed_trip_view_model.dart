@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/alerts/local_notification_wake_up_actuator.dart';
 import '../../domain/entities/trip.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../domain/services/trip_monitor.dart';
 import '../../domain/services/wake_up_policy.dart';
 import '../state/trip_controller.dart';
@@ -19,7 +19,7 @@ class ArmedTripViewModel extends ChangeNotifier {
   }
 
   final TripController controller;
-  final LocalNotificationWakeUpActuator actuator;
+  final WakeUpActuator actuator;
 
   Trip? get activeTrip => controller.activeTrip;
   TripAssessment? get assessment => controller.assessment;

@@ -8,6 +8,7 @@ import '../../data/location/geolocator_location_source.dart';
 import '../../data/persistence/secure_trip_repository.dart';
 import '../../data/persistence/trip_history_repository.dart';
 import '../../domain/entities/trip.dart';
+import '../../domain/services/platform_contracts.dart';
 import '../../domain/services/trip_monitor.dart';
 import '../../domain/services/wake_up_policy.dart';
 import '../../design/design.dart';
@@ -39,7 +40,7 @@ class _ArmedTripScreenState extends State<ArmedTripScreen> {
   Timer? _clockTicker;
 
   late TripController _controller;
-  late LocalNotificationWakeUpActuator _actuator;
+  late WakeUpActuator _actuator;
   late ArmedTripViewModel _viewModel;
 
   @override

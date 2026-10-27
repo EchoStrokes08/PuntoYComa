@@ -17,6 +17,7 @@ class LocalNotificationWakeUpActuator implements WakeUpActuator {
   bool _soundAtEnd = false;
 
   /// Configura si la etapa final reproduce sonido ("Sonido al final").
+  @override
   void configure({required bool soundAtEnd}) => _soundAtEnd = soundAtEnd;
 
   /// Inicializa el plugin al arrancar para que las acciones de una
@@ -57,6 +58,7 @@ class LocalNotificationWakeUpActuator implements WakeUpActuator {
 
   /// Solicita permiso de notificaciones (Android 13+ / iOS). Nunca lanza:
   /// sin permiso la app sigue funcionando en primer plano.
+  @override
   Future<bool> requestPermissions() async {
     final initialized = await _ensurePlugin();
     if (!initialized) return false;
