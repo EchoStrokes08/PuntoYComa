@@ -29,6 +29,16 @@ class PuntoEffects {
     ),
   ];
 
+  /// Sombra flotante premium para tarjetas destacadas sobre el fondo crema
+  /// (blur 24, opacidad 0.06): se nota sin ensuciar.
+  static const List<BoxShadow> floating = [
+    BoxShadow(
+      color: Color(0x0F000000), // 6% negro
+      blurRadius: 24,
+      offset: Offset(0, 8),
+    ),
+  ];
+
   /// Sombra para elementos de alarma (más visible, sin ser agresiva).
   static const List<BoxShadow> alarm = [
     BoxShadow(

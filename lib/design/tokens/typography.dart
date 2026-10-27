@@ -2,87 +2,92 @@ import 'package:flutter/material.dart';
 
 /// Sistema tipográfico de PuntoYcoma.
 ///
-/// Combina una fuente editorial serif para títulos (calma, elegancia, confianza)
-/// con una fuente sans-serif neutra para el cuerpo (legibilidad, neutralidad).
-/// Evita el aspecto genérico de Flutter al usar tipografía con carácter.
+/// Una sola familia — Plus Jakarta Sans — para cuerpo y títulos: limpia,
+/// geométrica y cálida, transmite calma y confianza sin parecer una plantilla.
+///
+/// Escala (por diseño):
+/// - Display: 32 / 28, peso 700, height ~1.1 → titulares de pantalla.
+/// - Title:   20 / 16 / 14, peso 600 → encabezados de sección y componentes.
+/// - Body:    16 / 14 / 13, height 1.5 → texto de lectura.
+/// - Caption: 13 / 12 / 11 → metadatos y texto legal.
 class PuntoTypography {
   PuntoTypography._();
 
-  // ── Familias tipográficas ─────────────────────────────────────────────
-  static const String fontFamilySerif = 'PlayfairDisplay';
-  static const String fontFamilySans = 'Inter';
+  /// Familia única de la app, empaquetada en `assets/fonts`.
+  static const String fontFamily = 'PlusJakartaSans';
 
   // ── Display ───────────────────────────────────────────────────────────
-  /// Títulos principales de pantalla (onboarding, bienvenida).
+  /// Titular principal de pantalla (héroe de bienvenida).
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 48,
-    fontWeight: FontWeight.w600,
+    fontFamily: fontFamily,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
     height: 1.1,
     letterSpacing: -0.5,
   );
 
-  /// Títulos secundarios grandes.
+  /// Título de pantalla (destino, preparación, historial, ajustes).
   static const TextStyle displayMedium = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 40,
-    fontWeight: FontWeight.w600,
-    height: 1.12,
+    fontFamily: fontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: 1.1,
     letterSpacing: -0.4,
   );
 
-  /// Títulos secundarios pequeños.
+  /// Título destacado compacto.
   static const TextStyle displaySmall = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 32,
-    fontWeight: FontWeight.w600,
-    height: 1.14,
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.15,
     letterSpacing: -0.3,
   );
 
   // ── Headline ──────────────────────────────────────────────────────────
   static const TextStyle headlineLarge = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 32,
-    fontWeight: FontWeight.w600,
-    height: 1.16,
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.2,
     letterSpacing: -0.2,
   );
 
   static const TextStyle headlineMedium = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 28,
-    fontWeight: FontWeight.w600,
-    height: 1.18,
-    letterSpacing: -0.1,
+    fontFamily: fontFamily,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
+    letterSpacing: -0.2,
   );
 
   static const TextStyle headlineSmall = TextStyle(
-    fontFamily: fontFamilySerif,
-    fontSize: 24,
+    fontFamily: fontFamily,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
-    height: 1.2,
+    height: 1.3,
+    letterSpacing: -0.1,
   );
 
   // ── Title ─────────────────────────────────────────────────────────────
   static const TextStyle titleLarge = TextStyle(
-    fontFamily: fontFamilySans,
-    fontSize: 18,
+    fontFamily: fontFamily,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
     height: 1.25,
-    letterSpacing: 0,
+    letterSpacing: -0.1,
   );
 
   static const TextStyle titleMedium = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w600,
     height: 1.3,
-    letterSpacing: 0.1,
+    letterSpacing: 0,
   );
 
   static const TextStyle titleSmall = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w600,
     height: 1.35,
@@ -91,7 +96,7 @@ class PuntoTypography {
 
   // ── Body ──────────────────────────────────────────────────────────────
   static const TextStyle bodyLarge = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w400,
     height: 1.5,
@@ -99,7 +104,7 @@ class PuntoTypography {
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w400,
     height: 1.5,
@@ -107,16 +112,16 @@ class PuntoTypography {
   );
 
   static const TextStyle bodySmall = TextStyle(
-    fontFamily: fontFamilySans,
-    fontSize: 12,
+    fontFamily: fontFamily,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
-    height: 1.45,
-    letterSpacing: 0.3,
+    height: 1.5,
+    letterSpacing: 0.2,
   );
 
   // ── Label ─────────────────────────────────────────────────────────────
   static const TextStyle labelLarge = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w600,
     height: 1.3,
@@ -124,7 +129,7 @@ class PuntoTypography {
   );
 
   static const TextStyle labelMedium = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w600,
     height: 1.35,
@@ -132,8 +137,8 @@ class PuntoTypography {
   );
 
   static const TextStyle labelSmall = TextStyle(
-    fontFamily: fontFamilySans,
-    fontSize: 10,
+    fontFamily: fontFamily,
+    fontSize: 11,
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0.3,
@@ -141,32 +146,26 @@ class PuntoTypography {
 
   // ── Caption ───────────────────────────────────────────────────────────
   static const TextStyle captionLarge = TextStyle(
-    fontFamily: fontFamilySans,
+    fontFamily: fontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    height: 1.45,
+    letterSpacing: 0.2,
+  );
+
+  static const TextStyle captionMedium = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w400,
     height: 1.4,
     letterSpacing: 0.3,
   );
 
-  static const TextStyle captionMedium = TextStyle(
-    fontFamily: fontFamilySans,
-    fontSize: 11,
-    fontWeight: FontWeight.w400,
-    height: 1.4,
-    letterSpacing: 0.3,
-  );
-
   static const TextStyle captionSmall = TextStyle(
-    fontFamily: fontFamilySans,
-    fontSize: 10,
+    fontFamily: fontFamily,
+    fontSize: 11,
     fontWeight: FontWeight.w400,
     height: 1.35,
     letterSpacing: 0.4,
   );
-}
-
-/// Extensión para aplicar estilos de PuntoTypography a TextStyle.
-extension PuntoTextStyle on TextStyle {
-  TextStyle get serif => copyWith(fontFamily: PuntoTypography.fontFamilySerif);
-  TextStyle get sans => copyWith(fontFamily: PuntoTypography.fontFamilySans);
 }

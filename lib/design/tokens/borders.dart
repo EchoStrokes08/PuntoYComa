@@ -10,11 +10,14 @@ class PuntoBorders {
   /// Radio mediano para tarjetas y contenedores.
   static const double md = 20.0;
 
-  /// Radio grande para paneles y modales.
+  /// Radio grande para paneles, modales y CTA principal.
   static const double lg = 28.0;
 
   /// Radio muy grande para elementos circulares grandes.
   static const double xl = 40.0;
+
+  /// Radio de campos de entrada (búsqueda, formularios).
+  static const double input = 16.0;
 
   /// Radio circular completo.
   static const double circle = double.infinity;

@@ -48,7 +48,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(),
           ),
-          textStyle: PuntoTypography.titleMedium.sans.copyWith(
+          textStyle: PuntoTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -62,7 +62,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(),
           ),
-          textStyle: PuntoTypography.titleMedium.sans.copyWith(
+          textStyle: PuntoTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -75,7 +75,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(PuntoSpacing.sm),
           ),
-          textStyle: PuntoTypography.labelMedium.sans.copyWith(
+          textStyle: PuntoTypography.labelMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -85,15 +85,15 @@ class PuntoTheme {
         filled: true,
         fillColor: PuntoLightColors.surfaceContainerHigh,
         border: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: const BorderSide(
             color: PuntoLightColors.primary,
             width: 1.5,
@@ -103,6 +103,9 @@ class PuntoTheme {
         hintStyle: PuntoTypography.bodyMedium.copyWith(
           color: PuntoLightColors.onSurfaceLow,
         ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: PuntoLightColors.primary,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -164,7 +167,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(),
           ),
-          textStyle: PuntoTypography.titleMedium.sans.copyWith(
+          textStyle: PuntoTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -181,7 +184,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(),
           ),
-          textStyle: PuntoTypography.titleMedium.sans.copyWith(
+          textStyle: PuntoTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -194,7 +197,7 @@ class PuntoTheme {
           shape: RoundedRectangleBorder(
             borderRadius: PuntoBorders.buttonRadius(PuntoSpacing.sm),
           ),
-          textStyle: PuntoTypography.labelMedium.sans.copyWith(
+          textStyle: PuntoTypography.labelMedium.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -204,15 +207,15 @@ class PuntoTheme {
         filled: true,
         fillColor: PuntoDarkColors.surfaceContainerHigh,
         border: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: PuntoBorders.buttonRadius(),
+          borderRadius: BorderRadius.circular(PuntoBorders.input),
           borderSide: const BorderSide(
             color: PuntoDarkColors.primary,
             width: 1.5,
@@ -222,6 +225,9 @@ class PuntoTheme {
         hintStyle: PuntoTypography.bodyMedium.copyWith(
           color: PuntoDarkColors.onSurfaceLow,
         ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: PuntoDarkColors.primary,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -272,8 +278,43 @@ extension PuntoColorScheme on BuildContext {
   Color get onPrimary => Theme.of(this).colorScheme.onPrimary;
   Color get surface => Theme.of(this).colorScheme.surface;
   Color get surfaceContainer => Theme.of(this).colorScheme.surfaceContainer;
+  Color get surfaceContainerHighest =>
+      Theme.of(this).colorScheme.surfaceContainerHighest;
+  Color get outlineVariant => Theme.of(this).colorScheme.outlineVariant;
+  /// Tarjeta elevada (blanca en claro, verde-gris en oscuro).
+  Color get surfaceBright => Theme.of(this).brightness == Brightness.dark
+      ? PuntoDarkColors.surfaceBright
+      : PuntoLightColors.surfaceBright;
+  Color get primaryContainer => Theme.of(this).colorScheme.primaryContainer;
   Color get onSurface => Theme.of(this).colorScheme.onSurface;
   Color get onSurfaceVariant => Theme.of(this).colorScheme.onSurfaceVariant;
+  Color get onSurfaceLow => Theme.of(this).colorScheme.onSurfaceVariant;
   Color get outline => Theme.of(this).colorScheme.outline;
   Color get error => Theme.of(this).colorScheme.error;
+
+  /// Tinta oscura sobre contenedores primarios claros (≥ 4.5:1).
+  Color get onPrimaryContainer => PuntoColors.onPrimaryContainer;
+
+  /// Naranja quemado de alarma (consciente del tema).
+  Color get alarm => Theme.of(this).brightness == Brightness.dark
+      ? PuntoDarkColors.alarm
+      : PuntoLightColors.alarm;
+
+  /// Contenedor de alarma (consciente del tema).
+  Color get alarmContainer => Theme.of(this).brightness == Brightness.dark
+      ? PuntoDarkColors.alarmContainer
+      : PuntoLightColors.alarmContainer;
+
+  /// Texto/icono sobre el color de alarma.
+  Color get onAlarm => PuntoColors.onAlarm;
+
+  /// Verde de éxito (consciente del tema).
+  Color get success => Theme.of(this).brightness == Brightness.dark
+      ? PuntoDarkColors.success
+      : PuntoLightColors.success;
+
+  /// Ámbar de advertencia (consciente del tema).
+  Color get warning => Theme.of(this).brightness == Brightness.dark
+      ? PuntoDarkColors.signalDegraded
+      : PuntoLightColors.signalDegraded;
 }

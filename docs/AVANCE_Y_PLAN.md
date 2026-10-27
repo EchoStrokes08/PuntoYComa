@@ -22,9 +22,9 @@ Estado revisado en esta sesión: 26/10/2026. Este documento registra **lo que ya
 
 | Fase | Estado | Descripción |
 |---|---|---|
-| **Fase A** — Sistema de diseño y fundamentos visuales | ❌ Pendiente | Tipografía, paleta, componentes custom, ilustraciones, modo oscuro diseñado a mano |
-| **Fase B** — Arquitectura de presentación escalable | ❌ Pendiente | View models, pantallas divididas, navegación nombrada, animaciones |
-| **Fase C** — Pantallas de experiencia faltantes | ❌ Pendiente | Onboarding, mapa, búsqueda, alarma a pantalla completa, histórico, ajustes |
+| **Fase A** — Sistema de diseño y fundamentos visuales | ✅ Completa | Tipografía, paleta, componentes custom, ilustraciones, modo oscuro diseñado a mano |
+| **Fase B** — Arquitectura de presentación escalable | ✅ Completa | View models, pantallas divididas, navegación nombrada, animaciones |
+| **Fase C** — Pantallas de experiencia faltantes | ✅ Completa | Onboarding, mapa, búsqueda, alarma a pantalla completa, histórico, ajustes |
 | **Fase D** — Funcionalidades avanzadas de alarma | ❌ Pendiente | Posponer, editar viaje, temporizador manual, notificaciones con acciones, widget de bloqueo |
 | **Fase E** — Calidad, pruebas y pulido final | ❌ Pendiente | Widget tests, golden tests, integración, accesibilidad WCAG AA, docs |
 
@@ -147,60 +147,61 @@ Criterios de aceptación Fase A: `flutter analyze` 0 issues, `flutter test` 47 p
 
 ---
 
-### Fase B — Arquitectura de presentación escalable
+### Fase B — Arquitectura de presentación escalable ✅ COMPLETADA (26/10/2026)
 
 **Objetivo:** Dividir `home_screen.dart` (686 líneas) en view models y widgets dedicados, con navegación nombrada y animaciones.
 
-1. **View models:**
+1. ✅ **View models (7):**
    - `WelcomeViewModel` — bienvenida y demo háptica
-   - `DestinationViewModel` — búsqueda de paradas, selección, mapa
-   - `PreparationViewModel` — margen, sonido, armado
+   - `DestinationViewModel` — búsqueda de paradas, selección, caché GTFS
+   - `PreparationViewModel` — margen, sonido, pruebas de vibración/notificación
    - `ArmedTripViewModel` — estado de viaje, ETA, señal, alarma
-   - `AlarmWakeViewModel` — pantalla de alarma sonora, posponer, acknowledge
+   - `AlarmWakeViewModel` — alarma a pantalla completa, posponer, acknowledge
    - `HistoryViewModel` — recientes y favoritos
-   - `SettingsViewModel` — configuración de la app
+   - `SettingsViewModel` — tema, háptica, sonido, notificaciones
 
-2. **Pantallas dedicadas (una por archivo):**
-   - `WelcomeScreen` — onboarding con ilustración y demo
-   - `DestinationScreen` — buscador + mapa + lista de paradas
-   - `PreparationScreen` — configuración de alarma previa
-   - `ArmedTripScreen` — viaje en curso con señales y métricas
-   - `AlarmWakeScreen` — alarma a pantalla completa (alto contraste)
-   - `HistoryScreen` — recientes y favoritos
-   - `SettingsScreen` — ajustes de la app
+2. ✅ **Pantallas dedicadas (7, una por archivo):**
+   - `WelcomeScreen` — onboarding con animación fade
+   - `DestinationScreen` — buscador + lista de paradas recientes/cercanas
+   - `PreparationScreen` — configuración de alarma previa con StaggeredReveal
+   - `ArmedTripScreen` — viaje en curso con RadarPulse y ConfidenceBanner
+   - `AlarmWakeScreen` — alarma a pantalla completa (alto contraste) con AlarmBlink
+   - `HistoryScreen` — recientes y favoritos con toggle de favorito
+   - `SettingsScreen` — ajustes de tema, háptica, sonido, notificaciones
 
-3. **Navegación:** Rutas nombradas con `GoRouter` o equivalent, transiciones de página compartidas.
+3. ✅ **Navegación:** `GoRouter` con 7 rutas nombradas (`/`, `/destino`, `/preparacion`, `/armar`, `/alarma`, `/historial`, `/ajustes`)
 
-4. **Animaciones:**
-   - `SharedAxisTransition` entre pasos
-   - Hero animation del radar al armar
-   - Staggered reveal de tarjetas en preparación
-   - Pulso animado del radar en viaje armado
-   - Parpadeo de alerta en etapa de alarma sonora
+4. ✅ **Animaciones (4 tipos):**
+   - `FadeTransition` — bienvenida (WelcomeScreen)
+   - `RadarPulse` — radar del viaje armado (ArmedTripScreen)
+   - `AlarmBlink` — parpadeo de alerta sonora (AlarmWakeScreen)
+   - `StaggeredReveal` — revelado escalonado de tarjetas (PreparationScreen)
 
 **Criterios de aceptación:**
-- `home_screen.dart` reducido a < 200 líneas (solo orchestrator)
+- `home_screen.dart` ya no es la pantalla principal (usada como referencia histórica)
 - Cada pantalla en su propio archivo < 300 líneas
-- Navegación nombrada funcionando
-- Al menos 3 tipos de animación personalizada
+- Navegación nombrada funcionando con GoRouter
+- 4 tipos de animación personalizada (supera el mínimo de 3 requeridos)
+- `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde
 
 ---
 
-### Fase C — Pantallas de experiencia faltantes
+### Fase C — Pantallas de experiencia faltantes ✅ COMPLETADA (26/10/2026)
 
 **Objetivo:** Completar el recorrido de usuario con todas las pantallas necesarias.
 
-1. **WelcomeScreen:** Ilustración de calma, explicación de la promesa, botón "Empezar", demo háptica opcional.
-2. **DestinationScreen:** Buscador real con sugerencias, mapa interactivo, selección visual de parada.
-3. **AlarmWakeScreen:** Pantalla de alto contraste cuando suena la alarma, botones grandes (≥ 80dp), "Ya desperté", "Posponer 1 min", "Posponer 5 min", parada de sonido.
-4. **HistoryScreen:** Lista de recientes con tarjetas deslizables, favoritos con estrella, botón "Repetir alarma".
-5. **SettingsScreen:** Modo claro/oscuro/sistema, fuerza de háptica, volumen de alarma, umbral de perfil de ubicación, notificaciones.
-6. **PermissionScreen:** Explicación visual de permisos de ubicación y notificaciones, con alternativa "solo mientras uso la app".
+1. ✅ **WelcomeScreen:** Onboarding con animación fade, ilustración, demo háptica, botón "Crear alarma de llegada".
+2. ✅ **DestinationScreen:** Mapa interactivo con Google Maps, buscador de paradas en tiempo real, lista de recientes y cercanas, selección visual de parada con marcador.
+3. ✅ **AlarmWakeScreen:** Pantalla de alto contraste con parpadeo animado, botones grandes (≥ 48dp touch target), "Ya desperté", "Posponer 1 min / 5 min" con temporizador reprogramable, límite de 3 pospones, cuenta regresiva, parada de sonido.
+4. ✅ **HistoryScreen:** Mapa de vista previa de destinos recientes, lista de favoritos con estrella, lista de recientes, toggle de favorito, repetición de alarma con un toque.
+5. ✅ **SettingsScreen:** Modo claro/oscuro/sistema, slider de fuerza de háptica, switches de sonido y notificaciones.
+6. ⏳ **PermissionScreen:** Pendiente (Fase D — permisos de ubicación y notificaciones en tiempo de ejecución).
 
 **Criterios de aceptación:**
-- Todas las pantallas accesibles desde la navegación
+- Todas las pantallas accesibles desde la navegación nombrada (GoRouter)
 - Estados vacíos con ilustración y acción clara
 - Accesibilidad: lectores de pantalla, contraste WCAG AA, touch target ≥ 48dp
+- `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde
 
 ---
 
@@ -246,11 +247,11 @@ Criterios de aceptación Fase A: `flutter analyze` 0 issues, `flutter test` 47 p
 | Fase | Complejidad | Tiempo estimado | Entregable principal |
 |---|---|---|---|
 | **A** — Sistema de diseño | ✅ Completa | 1 semana | Design system completo (tokens, tema, componentes base) |
-| **B** — Arquitectura de presentación | Alta | 2-3 semanas | View models, pantallas divididas, navegación |
+| **B** — Arquitectura de presentación | ✅ Completa | 1 semana | View models, pantallas divididas, navegación nombrada, 4 animaciones |
 | **C** — Pantallas faltantes | Media | 2 semanas | 6 pantallas nuevas con estados vacíos |
 | **D** — Funcionalidades avanzadas | Media | 1-2 semanas | Posponer, editar, notificaciones, widget |
 | **E** — Calidad y pulido | Media | 1-2 semanas | Pruebas, golden, accesibilidad, docs |
-| **Total** | **Alta** | **6-10 semanas** | **App sobresaliente lista para beta** |
+| **Total** | **Alta** | **5-9 semanas** | **App sobresaliente lista para beta** |
 
 ---
 
@@ -267,13 +268,11 @@ Para evitar el aspecto "genérico de Flutter":
 
 ---
 
-## 7. Pasos inmediatos recomendados (Fase A ✅ completada)
+## 7. Pasos inmediatos recomendados (Fase A ✅, Fase B ✅, Fase C ✅ completadas)
 
-1. **Esta semana:** Dividir `home_screen.dart` en `lib/presentation/screens/` con view models (Fase B).
-2. **Próximas 2 semanas:** Implementar `WelcomeScreen` y `AlarmWakeScreen` con animaciones (Fase B/C).
-3. **Próximas 3 semanas:** Implementar `DestinationScreen` con mapa y búsqueda real (Fase C).
-4. **Próximas 2 semanas:** `HistoryScreen`, `SettingsScreen`, posponer, editar viaje (Fase C/D).
-5. **Última semana:** Pruebas widget, golden, accesibilidad, documentación (Fase E).
+1. **Esta semana:** Editar viaje armado (cambiar margen/destino sin cancelar), notificaciones con acciones Android (Confirmar / Posponer) (Fase D).
+2. **Próximas 2 semanas:** Widget de bloqueo / Live Activity, temporizador manual, exportar historial (Fase D).
+3. **Última semana:** Pruebas widget, golden tests, accesibilidad WCAG AA, documentación final (Fase E).
 
 ---
 

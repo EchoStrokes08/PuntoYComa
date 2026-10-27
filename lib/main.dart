@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'data/alerts/local_notification_wake_up_actuator.dart';
@@ -8,7 +6,8 @@ import 'data/location/geolocator_location_source.dart';
 import 'data/persistence/secure_trip_repository.dart';
 import 'data/persistence/trip_history_repository.dart';
 import 'data/routing/local_stop_cache.dart';
-import 'presentation/screens/home_screen.dart';
+import 'design/theme/app_theme.dart';
+import 'presentation/app_router.dart';
 import 'presentation/state/trip_controller.dart';
 
 Future<void> main() async {
@@ -33,7 +32,7 @@ Future<void> main() async {
   );
 
   // A reboot must not orphan armed alarms within the documented OS limits.
-  unawaited(controller.tryResume());
+  controller.tryResume();
 
   runApp(
     PuntoYComaApp(
@@ -54,49 +53,12 @@ class PuntoYComaApp extends StatelessWidget {
   final ValueChanged<bool> onSoundConfigured;
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => MaterialApp.router(
+    routerConfig: AppRouter.createRouter(),
     title: 'PuntoYcoma',
     debugShowCheckedModeBanner: false,
-    theme: _theme(Brightness.light),
-    darkTheme: _theme(Brightness.dark),
+    theme: PuntoTheme.light(),
+    darkTheme: PuntoTheme.dark(),
     themeMode: ThemeMode.system,
-    home: HomeScreen(controller: controller, onSoundConfigured: onSoundConfigured),
   );
-
-  ThemeData _theme(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xff176B57),
-      brightness: brightness,
-      contrastLevel: 0.2,
-    );
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: brightness == Brightness.dark
-          ? const Color(0xff101514)
-          : const Color(0xffFCFBF7),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: scheme.surfaceContainerLow,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: scheme.surfaceContainerLow,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-      ),
-    );
-  }
 }

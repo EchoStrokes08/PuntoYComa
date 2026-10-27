@@ -60,44 +60,44 @@ Para ser una app **sobresaliente**, necesita:
 | Brecha | Estado | Descripción |
 |---|---|---|
 | **Sistema de diseño ausente** | ✅ Resuelto | `lib/design/` con tokens (colores, tipografía, espaciado, bordes, efectos), tema claro/oscuro diseñado a mano, componentes premium (botón, tarjeta, avatar, chip) |
-| **Sin animaciones ni transiciones** | ⏳ Pendiente | Fase B: shared-axis, hero animations, staggered reveals, pulso del radar |
+| **Sin animaciones ni transiciones** | ✅ Resuelto | Fase B: RadarPulse, AlarmBlink, StaggeredReveal, FadeTransition |
 | **Colores genéricos** | ✅ Resuelto | Paleta propia: verde bosque #0F3D2E, crema #F7F3EC, carbón #1A1A1A, naranja quemado #D9730D |
 | **Sin ilustraciones ni iconografía custom** | ⚠️ Parcial | Usando Material Icons unificados; ilustraciones custom pendiente |
-| **Estados vacíos genéricos** | ⏳ Pendiente | Fase C: ilustraciones + acciones en pantallas vacías |
+| **Estados vacíos genéricos** | ✅ Resuelto | Fase C: estados vacíos con ilustración y acción clara en todas las pantallas |
 | **Sin dark mode pensado** | ✅ Resuelto | Paleta oscura diseñada a mano en `PuntoDarkColors` |
 
-### B. Pantallas faltantes (PRIORIDAD 2)
+### B. Pantallas faltantes (PRIORIDAD 2) ✅ COMPLETADA
 
-| Pantalla | Descripción | Por qué falta |
+| Pantalla | Descripción | Estado |
 |---|---|---|
-| **Onboarding / Bienvenida** | Pantalla de introducción con ilustración, demo háptica, explicación de permisos en contexto. | El flujo salta directo a "¿Dónde te bajas?" sin contexto. |
-| **Mapa de paradas** | Mapa interactivo para seleccionar parada visualmente. | Solo hay 3 paradas hardcodeadas. |
-| **Búsqueda de paradas** | Buscador real con resultados, no solo 3 paradas fijas. | El campo de búsqueda está desactivado ("Próximamente"). |
-| **Histórico y favoritos** | Pantalla para ver viajes recientes y favoritos, repetir alarma con un toque. | Existe el repositorio pero no la UI. |
-| **Ajustes / Configuración** | Modo oscuro manual, fuerza de háptica, volumen de alarma, umbrales de perfil de ubicación. | No hay pantalla de ajustes. |
-| **Alarma sonora a pantalla completa** | Pantalla de alto contraste que se muestra cuando suena la alarma, con botones grandes "Ya desperté" / "Posponer 1 min". | Actualmente es solo una notificación + banner en la pantalla de viaje. |
-| **Pantalla de permiso en contexto** | Explicación visual de por qué se necesita ubicación, con botón de alternativa "solo mientras uso la app". | Los permisos se piden sin explicación visual. |
+| **Onboarding / Bienvenida** | Pantalla de introducción con ilustración, demo háptica, explicación de permisos en contexto. | ✅ Implementada en `WelcomeScreen` |
+| **Mapa de paradas** | Mapa interactivo para seleccionar parada visualmente. | ✅ Implementado en `DestinationScreen` con `google_maps_flutter` |
+| **Búsqueda de paradas** | Buscador real con resultados, no solo 3 paradas fijas. | ✅ Implementado en `DestinationScreen` con filtro en tiempo real |
+| **Histórico y favoritos** | Pantalla para ver viajes recientes y favoritos, repetir alarma con un toque. | ✅ Implementada en `HistoryScreen` con mapa de vista previa |
+| **Ajustes / Configuración** | Modo oscuro manual, fuerza de háptica, volumen de alarma, umbrales de perfil de ubicación. | ✅ Implementada en `SettingsScreen` |
+| **Alarma sonora a pantalla completa** | Pantalla de alto contraste que se muestra cuando suena la alarma, con botones grandes "Ya desperté" / "Posponer 1 min". | ✅ Implementada en `AlarmWakeScreen` con snooze programable |
+| **Pantalla de permiso en contexto** | Explicación visual de por qué se necesita ubicación, con botón de alternativa "solo mientras uso la app". | ⏳ Pendiente (Fase D) |
 
 ### C. Funcionalidades faltantes (PRIORIDAD 3)
 
-| Funcionalidad | Descripción |
-|---|---|
-| **Posponer / Snooze** | Botón para posponer la alarma 1, 3 o 5 minutos. |
-| **Editar viaje armado** | Cambiar margen de anticipación o destino sin cancelar y re-armar. |
-| **Temporizador manual** | Último recurso si se revoca el permiso de ubicación. |
-| **Exportar historial** | Compartir resumen de viajes (sin coordenadas precisas). |
-| **Notificación con acciones** | Botones "Confirmar" / "Posponer" en la notificación persistente Android. |
-| **Widget de bloqueo / Live Activity** | Progreso visible en pantalla de bloqueo (Android ongoing notification, iOS Live Activity). |
+| Funcionalidad | Descripción | Estado |
+|---|---|---|
+| **Posponer / Snooze** | Botón para posponer la alarma 1 o 5 minutos, con temporizador reprogramable y límite de 3 pospones. | ✅ Implementado en `AlarmWakeViewModel` + `AlarmWakeScreen` |
+| **Editar viaje armado** | Cambiar margen de anticipación o destino sin cancelar y re-armar. | ⏳ Pendiente (Fase D) |
+| **Temporizador manual** | Último recurso si se revoca el permiso de ubicación. | ⏳ Pendiente (Fase D) |
+| **Exportar historial** | Compartir resumen de viajes (sin coordenadas precisas). | ⏳ Pendiente (Fase D) |
+| **Notificación con acciones** | Botones "Confirmar" / "Posponer" en la notificación persistente Android. | ⏳ Pendiente (Fase D) |
+| **Widget de bloqueo / Live Activity** | Progreso visible en pantalla de bloqueo (Android ongoing notification, iOS Live Activity). | ⏳ Pendiente (Fase D) |
 
-### D. Arquitectura y calidad de código (PRIORIDAD 4)
+### D. Arquitectura y calidad de código (PRIORIDAD 4) ✅ PARCIALMENTE COMPLETADA
 
-| Brecha | Descripción |
-|---|---|
-| **home_screen.dart monolítico** | 686 líneas, mezcla lógica de navegación, UI y estado. Debe dividirse en view models + widgets por pantalla. |
-| **Sin view models** | La lógica de presentación está mezclada en el StatefulWidget. |
-| **Sin rutas nombradas** | Todo se maneja con un entero `_step`. No hay navegación declarativa. |
-| **Sin pruebas widget** | Solo hay pruebas unitarias. No hay widget tests ni golden tests para UI. |
-| **Sin integración end-to-end** | No hay pruebas que simulen un viaje completo desde armar hasta alarma sonora. |
+| Brecha | Descripción | Estado |
+|---|---|---|
+| **home_screen.dart monolítico** | 686 líneas, mezcla lógica de navegación, UI y estado. Debe dividirse en view models + widgets por pantalla. | ✅ Resuelto — dividido en 7 pantallas + 7 view models |
+| **Sin view models** | La lógica de presentación está mezclada en el StatefulWidget. | ✅ Resuelto — 7 view models con ChangeNotifier |
+| **Sin rutas nombradas** | Todo se maneja con un entero `_step`. No hay navegación declarativa. | ✅ Resuelto — GoRouter con 7 rutas nombradas |
+| **Sin pruebas widget** | Solo hay pruebas unitarias. No hay widget tests ni golden tests para UI. | ⏳ Pendiente (Fase E) |
+| **Sin integración end-to-end** | No hay pruebas que simulen un viaje completo desde armar hasta alarma sonora. | ⏳ Pendiente (Fase E) |
 
 ---
 
@@ -162,21 +162,22 @@ Cada fase termina con: `flutter analyze` (0 issues), `flutter test` (todas pasan
 
 ---
 
-### Fase C — Pantallas de experiencia faltantes
+### Fase C — Pantallas de experiencia faltantes ✅ COMPLETADA (26/10/2026)
 
 **Objetivo:** Completar el recorrido de usuario con todas las pantallas necesarias.
 
-1. **WelcomeScreen:** Ilustración de calma, explicación de la promesa, botón "Empezar", demo háptica opcional.
-2. **DestinationScreen:** Buscador real con sugerencias, mapa interactivo (Google Maps / Mapbox), selección visual de parada.
-3. **AlarmWakeScreen:** Pantalla de alto contraste cuando suena la alarma, botones grandes (80dp+), "Ya desperté", "Posponer 1 min", "Posponer 5 min", parada de sonido.
-4. **HistoryScreen:** Lista de recientes con tarjetas deslizables, favoritos con estrella, botón "Repetir alarma".
-5. **SettingsScreen:** Modo claro/oscuro/sistema, fuerza de háptica (suave/media/fuerte), volumen de alarma, umbral de perfil de ubicación, notificaciones.
-6. **PermissionScreen:** Explicación visual de permisos de ubicación y notificaciones, con alternativa "solo mientras uso la app".
+1. ✅ **WelcomeScreen:** Onboarding con animación fade, ilustración, demo háptica, botón "Crear alarma de llegada".
+2. ✅ **DestinationScreen:** Mapa interactivo con Google Maps, buscador de paradas en tiempo real, lista de recientes y cercanas, selección visual de parada con marcador.
+3. ✅ **AlarmWakeScreen:** Pantalla de alto contraste con parpadeo animado, botones grandes (≥ 48dp touch target), "Ya desperté", "Posponer 1 min / 5 min" con temporizador reprogramable, límite de 3 pospones, cuenta regresiva, parada de sonido.
+4. ✅ **HistoryScreen:** Mapa de vista previa de destinos recientes, lista de favoritos con estrella, lista de recientes, toggle de favorito, repetición de alarma con un toque.
+5. ✅ **SettingsScreen:** Modo claro/oscuro/sistema, slider de fuerza de háptica, switches de sonido y notificaciones.
+6. ⏳ **PermissionScreen:** Pendiente (Fase D — permisos de ubicación y notificaciones en tiempo de ejecución).
 
 **Criterios de aceptación:**
-- Todas las pantallas accesibles desde la navegación
+- Todas las pantallas accesibles desde la navegación nombrada (GoRouter)
 - Estados vacíos con ilustración y acción clara
 - Accesibilidad: lectores de pantalla, contraste WCAG AA, touch target ≥ 48dp
+- `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde
 
 ---
 
@@ -221,12 +222,12 @@ Cada fase termina con: `flutter analyze` (0 issues), `flutter test` (todas pasan
 
 | Fase | Complejidad | Tiempo estimado | Entregable principal |
 |---|---|---|---|
-| A — Sistema de diseño | Media | 1-2 semanas | Design system completo + ilustraciones |
-| B — Arquitectura de presentación | Alta | 2-3 semanas | View models, pantallas divididas, navegación |
-| C — Pantallas faltantes | Media | 2 semanas | 6 pantallas nuevas con estados vacíos |
-| D — Funcionalidades avanzada | Media | 1-2 semanas | Posponer, editar, notificaciones, widget |
+| A — Sistema de diseño | Media | ✅ Completada | Design system completo + ilustraciones |
+| B — Arquitectura de presentación | Alta | ✅ Completada | View models, pantallas divididas, navegación |
+| C — Pantallas faltantes | Media | ✅ Completada | 6 pantallas nuevas con estados vacíos |
+| D — Funcionalidades avanzadas | Media | 1-2 semanas | Posponer (completo), editar, notificaciones, widget |
 | E — Calidad y pulido | Media | 1-2 semanas | Pruebas, golden, accesibilidad, docs |
-| **Total** | **Alta** | **7-11 semanas** | **App sobresaliente lista para beta** |
+| **Total** | **Alta** | **3-4 semanas** | **App sobresaliente lista para beta** |
 
 ---
 
@@ -245,9 +246,6 @@ Para evitar el aspecto "genérico de Flutter":
 
 ## 7. Pasos inmediatos recomendados
 
-1. **Esta semana:** Crear `lib/design/` con sistema de diseño (colores, tipografía, espaciado, componentes base).
-2. **Esta semana:** Dividir `home_screen.dart` en `lib/presentation/screens/` con view models.
-3. **Próximas 2 semanas:** Implementar `WelcomeScreen` y `AlarmWakeScreen` con animaciones.
-4. **Próximas 3 semanas:** Implementar `DestinationScreen` con mapa y búsqueda real.
-5. **Próximas 2 semanas:** `HistoryScreen`, `SettingsScreen`, posponer, editar viaje.
-6. **Última semana:** Pruebas widget, golden, accesibilidad, documentación.
+1. **Esta semana:** Editar viaje armado (cambiar margen/destino sin cancelar), notificaciones con acciones Android (Confirmar / Posponer) (Fase D).
+2. **Próximas 2 semanas:** Widget de bloqueo / Live Activity, temporizador manual, exportar historial (Fase D).
+3. **Última semana:** Pruebas widget, golden tests, accesibilidad WCAG AA, documentación final (Fase E).

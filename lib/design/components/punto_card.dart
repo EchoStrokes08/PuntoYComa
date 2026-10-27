@@ -27,17 +27,23 @@ class PuntoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // El Material interno garantiza que InkWell/ListTile dentro de la
+    // tarjeta pinten su fondo y splashes sobre el color correcto (y no
+    // sobre el Material del Scaffold, invisible tras la DecoratedBox).
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: color ?? Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(borderRadius),
         border: border,
         boxShadow: elevation,
       ),
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(PuntoSpacing.md),
-        child: child,
+      child: Material(
+        color: color ?? Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(PuntoSpacing.md),
+          child: child,
+        ),
       ),
     );
   }

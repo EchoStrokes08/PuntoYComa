@@ -7,6 +7,7 @@ class PuntoSpacing {
 
   static const double xs = 4.0;   // 4dp  - ajustes mínimos
   static const double sm = 8.0;   // 8dp  - espacio entre elementos relacionados
+  static const double s12 = 12.0;  // 12dp - separación entre elementos de lista
   static const double md = 16.0;  // 16dp - espacio entre secciones
   static const double lg = 24.0;  // 24dp - espacio entre bloques principales
   static const double xl = 32.0;  // 32dp - espacio entre secciones grandes
@@ -18,8 +19,8 @@ class PuntoSpacing {
   /// Padding compacto (usa md).
   static const double compactPadding = md;
 
-  /// Espacio entre elementos de una lista (usa sm).
-  static const double listItemGap = sm;
+  /// Espacio entre elementos de una lista (usa s12).
+  static const double listItemGap = s12;
 
   /// Espacio entre tarjetas (usa md).
   static const double cardGap = md;
