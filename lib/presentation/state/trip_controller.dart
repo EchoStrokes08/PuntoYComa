@@ -312,7 +312,7 @@ class TripController extends ChangeNotifier {
     _ticker = null;
     _clearSnooze();
     _clearManualTimer(keepAlarmState: false);
-    await _subscription?.cancel();
+    unawaited(_subscription?.cancel());
     _subscription = null;
     final closedTrip = _activeTrip;
     _activeTrip = null;
