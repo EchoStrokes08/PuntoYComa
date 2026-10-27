@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://puntoycoma:local-dev-only@postgres:5432/puntoycoma
+      # Define aquí el origen de la app/panel web que consumirá la API:
+      # CORS_ORIGIN: https://tu-origen.confiable
+    ports: ["3000:3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: puntoycoma
+      POSTGRES_USER: puntoycoma
+      POSTGRES_PASSWORD: local-dev-only
+    ports: ["5432:5432"]
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+      # La migración se aplica en el primer arranque del volumen.
+      - "./migrations:/docker-entrypoint-initdb.d:ro"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puntoycoma -d puntoycoma"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  postgres_data:
