@@ -97,9 +97,11 @@ void main() {
       );
     });
 
-    test('alarmInk (naranja oscuro) + alarmScreen ≥ 4.5:1', () {
+    test('alarmInk (texto del botón) + onAlarm (fondo blanco) ≥ 4.5:1', () {
+      // En alarm_wake_screen el botón "Ya desperté" usa fondo onAlarm y
+      // texto alarmInk; ese es el par real que debe cumplir WCAG AA.
       expect(
-        _contrastRatio(PuntoColors.alarmInk, PuntoColors.alarmScreen),
+        _contrastRatio(PuntoColors.alarmInk, PuntoColors.onAlarm),
         greaterThanOrEqualTo(4.5),
       );
     });
@@ -192,9 +194,35 @@ void main() {
     });
 
     testWidgets('Slider tiene semántica de slider', (tester) async {
+      final handle = tester.ensureSemantics();
+      addTearDown(handle.dispose);
       await _pumpSlider(tester);
-      final semantics = tester.getSemantics(find.byType(Slider));
-      expect(semantics, isSemantics(isSlider: true));
+
+      // El nodo de semántica del Slider cuelga de un RenderObject descendiente,
+      // así que se busca entre los elementos hijos en vez de en el Slider.
+      final elements = find
+          .descendant(
+            of: find.byType(Slider),
+            matching: find.byWidgetPredicate((_) => true),
+          )
+          .evaluate()
+          .toList();
+
+      var found = false;
+      for (final element in elements) {
+        try {
+          final node = tester.getSemantics(
+            find.byElementPredicate((e) => identical(e, element)),
+          );
+          if (isSemantics(isSlider: true).matches(node, <dynamic, dynamic>{})) {
+            found = true;
+            break;
+          }
+        } catch (_) {
+          // Elemento sin nodo de semántica propio: se ignora.
+        }
+      }
+      expect(found, isTrue, reason: 'Ningún nodo del Slider tiene isSlider');
     });
   });
 }
@@ -209,9 +237,10 @@ double _contrastRatio(Color fg, Color bg) {
 }
 
 double _luminance(Color c) {
-  final rsrgb = c.r / 255.0;
-  final gsrgb = c.g / 255.0;
-  final bsrgb = c.b / 255.0;
+  // Color.r/g/b ya son componentes normalizados 0.0–1.0 (Flutter ≥ 3.27).
+  final rsrgb = c.r;
+  final gsrgb = c.g;
+  final bsrgb = c.b;
 
   double toLinear(double c) {
     return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4).toDouble();
