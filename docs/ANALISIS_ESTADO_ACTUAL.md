@@ -7,7 +7,7 @@
 
 ## 1. Resumen ejecutivo
 
-La aplicación tiene **capa de dominio y datos completamente implementada y probada** (47 pruebas Flutter, 10 pruebas backend, 0 issues de analyze). La lógica de alarma, ubicación adaptativa, persistencia cifrada, histórico de viajes y cliente de API comunitaria están listas.
+La aplicación tiene **capa de dominio y datos completamente implementada y probada** (82 pruebas Flutter, 10 pruebas backend, 0 issues de analyze). La lógica de alarma, ubicación adaptativa, persistencia cifrada, histórico de viajes y cliente de API comunitaria están listas.
 
 **Sin embargo, la capa de presentación es funcional pero genérica.** Usa componentes Material 3 estándar, colores de semilla, sin animaciones, sin transiciones, sin pantalla de bienvenida dedicada, sin pantalla de alarma sonora a pantalla completa, sin mapa, sin búsqueda de paradas real, y toda la lógica UI está concentrada en un solo archivo de 686 líneas (`home_screen.dart`).
 
@@ -49,7 +49,7 @@ Para ser una app **sobresaliente**, necesita:
 | Nativo Android | `android/app/src/main/kotlin/` | ✅ Completo | Foreground service, BootReceiver, MainActivity |
 | Nativo Android | `AndroidManifest.xml` | ✅ Completo | Permisos, servicio, receiver |
 | Backend | `backend/src/` | ✅ Completo | Fastify, Postgres, rate limit, CORS, tests |
-| Pruebas | `test/` | ✅ 47 pruebas | Dominio, controller, caché, historial, API |
+| Pruebas | `test/` | ✅ 82 pruebas | Dominio, controller, caché, historial, exportación, API |
 
 ---
 
@@ -76,18 +76,18 @@ Para ser una app **sobresaliente**, necesita:
 | **Histórico y favoritos** | Pantalla para ver viajes recientes y favoritos, repetir alarma con un toque. | ✅ Implementada en `HistoryScreen` con mapa de vista previa |
 | **Ajustes / Configuración** | Modo oscuro manual, fuerza de háptica, volumen de alarma, umbrales de perfil de ubicación. | ✅ Implementada en `SettingsScreen` |
 | **Alarma sonora a pantalla completa** | Pantalla de alto contraste que se muestra cuando suena la alarma, con botones grandes "Ya desperté" / "Posponer 1 min". | ✅ Implementada en `AlarmWakeScreen` con snooze programable |
-| **Pantalla de permiso en contexto** | Explicación visual de por qué se necesita ubicación, con botón de alternativa "solo mientras uso la app". | ⏳ Pendiente (Fase D) |
+| **Pantalla de permiso en contexto** | Explicación visual de por qué se necesita ubicación, con botón de alternativa "solo mientras uso la app". | ✅ Implementada en `PermissionScreen` (Fase D) |
 
 ### C. Funcionalidades faltantes (PRIORIDAD 3)
 
 | Funcionalidad | Descripción | Estado |
 |---|---|---|
 | **Posponer / Snooze** | Botón para posponer la alarma 1 o 5 minutos, con temporizador reprogramable y límite de 3 pospones. | ✅ Implementado en `AlarmWakeViewModel` + `AlarmWakeScreen` |
-| **Editar viaje armado** | Cambiar margen de anticipación o destino sin cancelar y re-armar. | ⏳ Pendiente (Fase D) |
-| **Temporizador manual** | Último recurso si se revoca el permiso de ubicación. | ⏳ Pendiente (Fase D) |
-| **Exportar historial** | Compartir resumen de viajes (sin coordenadas precisas). | ⏳ Pendiente (Fase D) |
-| **Notificación con acciones** | Botones "Confirmar" / "Posponer" en la notificación persistente Android. | ⏳ Pendiente (Fase D) |
-| **Widget de bloqueo / Live Activity** | Progreso visible en pantalla de bloqueo (Android ongoing notification, iOS Live Activity). | ⏳ Pendiente (Fase D) |
+| **Editar viaje armado** | Cambiar margen de anticipación o destino sin cancelar y re-armar. | ✅ `TripController.editActiveTrip` + hoja "Editar viaje" |
+| **Temporizador manual** | Último recurso si se revoca el permiso de ubicación. | ✅ Hoja de temporizador en `ArmedTripScreen` |
+| **Exportar historial** | Compartir resumen de viajes (sin coordenadas precisas). | ✅ `HistoryExporter` + hoja nativa / portapapeles |
+| **Notificación con acciones** | Botones "Confirmar" / "Posponer" en la notificación persistente Android. | ✅ `AndroidNotificationAction` en `LocalNotificationWakeUpActuator` |
+| **Widget de bloqueo / Live Activity** | Progreso visible en pantalla de bloqueo (Android ongoing notification, iOS Live Activity). | ✅ Android ongoing notification con texto, ETA y barra de avance |
 
 ### D. Arquitectura y calidad de código (PRIORIDAD 4) ✅ PARCIALMENTE COMPLETADA
 
@@ -171,31 +171,33 @@ Cada fase termina con: `flutter analyze` (0 issues), `flutter test` (todas pasan
 3. ✅ **AlarmWakeScreen:** Pantalla de alto contraste con parpadeo animado, botones grandes (≥ 48dp touch target), "Ya desperté", "Posponer 1 min / 5 min" con temporizador reprogramable, límite de 3 pospones, cuenta regresiva, parada de sonido.
 4. ✅ **HistoryScreen:** Mapa de vista previa de destinos recientes, lista de favoritos con estrella, lista de recientes, toggle de favorito, repetición de alarma con un toque.
 5. ✅ **SettingsScreen:** Modo claro/oscuro/sistema, slider de fuerza de háptica, switches de sonido y notificaciones.
-6. ⏳ **PermissionScreen:** Pendiente (Fase D — permisos de ubicación y notificaciones en tiempo de ejecución).
+6. ✅ **PermissionScreen:** Implementada en Fase D — explica el uso de ubicación en contexto, pide permiso de notificaciones sin bloquear y ofrece abrir los ajustes del sistema si el permiso quedó bloqueado.
 
 **Criterios de aceptación:**
 - Todas las pantallas accesibles desde la navegación nombrada (GoRouter)
 - Estados vacíos con ilustración y acción clara
 - Accesibilidad: lectores de pantalla, contraste WCAG AA, touch target ≥ 48dp
-- `flutter analyze` 0 issues, `flutter test` 47 pruebas en verde
+- `flutter analyze` 0 issues, `flutter test` 82 pruebas en verde
 
 ---
 
-### Fase D — Funcionalidades avanzadas de alarma
+### Fase D — Funcionalidades avanzadas de alarma ✅ COMPLETADA (27/10/2026)
 
 **Objetivo:** Hacer la alarma realmente útil en situaciones reales.
 
-1. **Posponer (snooze):** 1, 3, 5 minutos con reprogramación del temporizador.
-2. **Editar viaje armado:** Cambiar margen sin cancelar.
-3. **Temporizador manual:** Entrada de tiempo estimado si GPS falla.
-4. **Notificaciones con acciones:** Android notification buttons (Confirmar / Posponer).
-5. **Widget de bloqueo / Live Activity:** Progreso visible sin desbloquear.
-6. **Exportar historial:** Compartir resumen (sin coordenadas precisas).
+1. ✅ **Posponer (snooze):** 1, 3 o 5 minutos con reprogramación real y límite de 3 pospones; comparte estado con la notificación.
+2. ✅ **Editar viaje armado:** margen y destino se persisten sin cancelar ni re-armar.
+3. ✅ **Temporizador manual:** alarma por tiempo si el GPS falla, conviviendo con la vigilancia por distancia.
+4. ✅ **Notificaciones con acciones:** Android "Ya desperté" / "Posponer 1 min".
+5. ✅ **Progreso en pantalla de bloqueo:** notificación ongoing con distancia, ETA y barra de avance.
+6. ✅ **Exportar historial:** resumen sin coordenadas precisas; hoja nativa con respaldo al portapapeles.
+7. ✅ **Estado compartido:** `PuntoScope` garantiza un único `TripController` durante toda la navegación.
 
 **Criterios de aceptación:**
-- Posponer reprograma la alarma correctamente
-- Editar viaje persiste cambios en repositorio cifrado
-- Notificaciones con acciones responden en Android
+- Posponer reprograma la alarma correctamente (verificado con temporizadores reales)
+- Editar viaje persiste cambios en repositorio cifrado sin perder la vigilancia
+- Notificaciones con acciones responden en Android y en pruebas
+- `flutter analyze` 0 issues, `flutter test` 82 pruebas en verde
 
 ---
 
@@ -244,8 +246,8 @@ Para evitar el aspecto "genérico de Flutter":
 
 ---
 
-## 7. Pasos inmediatos recomendados
+## 7. Pasos inmediatos recomendados (Fases A ✅, B ✅, C ✅ y D ✅ completadas)
 
-1. **Esta semana:** Editar viaje armado (cambiar margen/destino sin cancelar), notificaciones con acciones Android (Confirmar / Posponer) (Fase D).
-2. **Próximas 2 semanas:** Widget de bloqueo / Live Activity, temporizador manual, exportar historial (Fase D).
-3. **Última semana:** Pruebas widget, golden tests, accesibilidad WCAG AA, documentación final (Fase E).
+1. **Ahora:** Fase E — pruebas widget por pantalla, golden tests, prueba de integración del viaje completo y auditoría de accesibilidad WCAG AA.
+2. **Después:** pulido de micro-interacciones y documentación final.
+3. **Antes de beta:** validar en dispositivo físico las acciones de notificación, el foreground service y la hoja nativa de compartir.

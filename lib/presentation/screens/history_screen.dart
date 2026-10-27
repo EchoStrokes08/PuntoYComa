@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../data/persistence/trip_history_repository.dart';
+import '../../data/share/share_bridge.dart';
 import '../../domain/entities/trip.dart';
 import '../../design/design.dart';
+import '../state/punto_scope.dart';
 import '../view_models/view_models.dart';
 
-/// Pantalla de historial: recientes, favoritos y mapa de vista previa.
+/// Pantalla de historial: recientes, favoritos, mapa de vista previa y
+/// exportación del resumen sin coordenadas precisas.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -16,13 +20,18 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  bool _initialized = false;
   late HistoryViewModel _viewModel;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     _viewModel = HistoryViewModel(
-      historyRepository: TripHistoryRepositoryImpl(),
+      historyRepository:
+          PuntoScope.maybeOf(context)?.historyRepository ??
+          TripHistoryRepositoryImpl(),
     );
     _viewModel.load();
   }
@@ -33,10 +42,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.dispose();
   }
 
+  Future<void> _export() async {
+    final summary = _viewModel.buildExportSummary();
+    final shared = await const ShareBridge().shareText(summary);
+    if (!shared) {
+      await Clipboard.setData(ClipboardData(text: summary));
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          shared
+              ? 'Resumen listo para compartir.'
+              : 'Resumen copiado (sin coordenadas precisas).',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canExport = _viewModel.allTrips.isNotEmpty;
     return PuntoScaffold(
-      header: const PuntoScreenHeader(title: 'Tu historial'),
+      header: PuntoScreenHeader(
+        title: 'Tu historial',
+        trailing: Semantics(
+          label: 'Exportar historial',
+          button: true,
+          enabled: canExport,
+          child: IconButton(
+            icon: const Icon(Icons.ios_share_rounded, size: 22),
+            tooltip: 'Exportar historial',
+            onPressed: canExport ? _export : null,
+          ),
+        ),
+      ),
       child: SingleChildScrollView(
         child: AnimatedBuilder(
           animation: _viewModel,

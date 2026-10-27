@@ -32,6 +32,7 @@ class PreparationViewModel extends ChangeNotifier {
   /// Cambia la preferencia de sonido al final.
   void setSoundAtEnd(bool value) {
     _soundAtEnd = value;
+    actuator.configure(soundAtEnd: value);
     notifyListeners();
   }
 

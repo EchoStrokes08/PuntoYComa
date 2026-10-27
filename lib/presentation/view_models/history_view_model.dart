@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/trip.dart';
+import '../../domain/services/history_export.dart';
 import '../../domain/services/trip_history_contracts.dart';
 
 /// ViewModel de la pantalla de historial (recientes y favoritos).
@@ -72,4 +73,7 @@ class HistoryViewModel extends ChangeNotifier {
     await historyRepository.saveRecent(trip);
     await load();
   }
+
+  /// Resumen exportable: sin coordenadas precisas (celda de ~1 km).
+  String buildExportSummary() => HistoryExporter.buildSummary(allTrips);
 }

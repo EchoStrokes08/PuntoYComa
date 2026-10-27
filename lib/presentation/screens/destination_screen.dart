@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/routing/local_stop_cache.dart';
 import '../../domain/entities/trip.dart';
 import '../../design/design.dart';
+import '../state/punto_scope.dart';
 import '../view_models/view_models.dart';
 import '../widgets/widgets.dart';
 
@@ -13,8 +14,14 @@ import '../widgets/widgets.dart';
 /// Flujo: el usuario elige una parada (mapa, búsqueda o listas) y confirma
 /// con el botón fijo inferior, que permanece deshabilitado hasta que haya
 /// una selección.
+///
+/// Con [editing] en true se usa para cambiar el destino de un viaje ya
+/// armado: confirma sobre el controlador compartido y vuelve al radar sin
+/// cancelar la vigilancia.
 class DestinationScreen extends StatefulWidget {
-  const DestinationScreen({super.key});
+  const DestinationScreen({super.key, this.editing = false});
+
+  final bool editing;
 
   @override
   State<DestinationScreen> createState() => _DestinationScreenState();
@@ -56,23 +63,37 @@ class _DestinationScreenState extends State<DestinationScreen> {
     if (stop == null) return;
     await _viewModel.saveRecent(stop);
     if (!mounted) return;
+    if (widget.editing) {
+      final scope = PuntoScope.maybeOf(context);
+      await scope?.controller.editActiveTrip(
+        destination: GeoPoint(stop.latitude, stop.longitude),
+        mode: stop.mode,
+      );
+      if (mounted) context.pop();
+      return;
+    }
     context.push('/preparacion', extra: stop);
   }
 
   @override
   Widget build(BuildContext context) {
     return PuntoScaffold(
-      header: const PuntoScreenHeader(title: '¿Dónde te bajas?'),
+      header: PuntoScreenHeader(
+        title: widget.editing ? 'Cambiar destino' : '¿Dónde te bajas?',
+      ),
       bottomBar: AnimatedBuilder(
         animation: _viewModel,
         builder: (context, _) {
           final hasSelection = _viewModel.selectedStop != null;
+          final cta = widget.editing
+              ? 'Actualizar destino'
+              : (hasSelection ? 'Confirmar destino' : 'Elige una parada');
           return PuntoButton(
             fullWidth: true,
             height: 56,
             borderRadius: PuntoBorders.lg,
             onPressed: hasSelection ? _confirmSelection : null,
-            label: 'Confirmar destino',
+            label: cta,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -80,7 +101,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
                 const SizedBox(width: PuntoSpacing.sm),
                 Flexible(
                   child: Text(
-                    hasSelection ? 'Confirmar destino' : 'Elige una parada',
+                    cta,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

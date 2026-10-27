@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../../data/alerts/local_notification_wake_up_actuator.dart';
@@ -9,14 +7,17 @@ import '../state/trip_controller.dart';
 
 /// ViewModel de la pantalla de alarma a pantalla completa.
 ///
-/// Gestiona el estado de alarma sonora, las opciones de posponer y la
-/// confirmación de despertar con alto contraste para máxima visibilidad.
+/// No reprograma nada por su cuenta: delega en [TripController], que es el
+/// único dueño del temporizador de posponer y del límite de pospones. Así la
+/// alarma de la notificación y la de la pantalla comparten el mismo estado.
 class AlarmWakeViewModel extends ChangeNotifier {
   AlarmWakeViewModel({
     required this.controller,
     required this.actuator,
     required this.trip,
-  });
+  }) {
+    controller.addListener(_onControllerChanged);
+  }
 
   final TripController controller;
   final LocalNotificationWakeUpActuator actuator;
@@ -26,61 +27,28 @@ class AlarmWakeViewModel extends ChangeNotifier {
   TripIssue get issue => controller.issue;
   bool get isArmed => controller.isArmed;
 
-  bool _isSnoozing = false;
-  int _snoozeMinutes = 1;
-  int _snoozeCount = 0;
-  static const int maxSnoozes = 3;
-  Timer? _snoozeTimer;
-  DateTime? _snoozeWakeUpTime;
+  bool get isSnoozing => controller.isSnoozed;
+  DateTime? get snoozeWakeUpTime => controller.snoozeUntil;
+  int get snoozeCount => controller.snoozeCount;
+  bool get maxSnoozesReached => !controller.canSnooze;
+  int get snoozesRemaining => controller.snoozesRemaining;
 
-  bool get isSnoozing => _isSnoozing;
-  int get snoozeMinutes => _snoozeMinutes;
-  int get snoozeCount => _snoozeCount;
-  bool get maxSnoozesReached => _snoozeCount >= maxSnoozes;
-  int get snoozesRemaining => (maxSnoozes - _snoozeCount).clamp(0, maxSnoozes);
-  DateTime? get snoozeWakeUpTime => _snoozeWakeUpTime;
-
-  /// Confirma que el usuario está despierto y detiene la alarma.
-  void acknowledge() {
-    _cancelSnoozeTimer();
-    controller.acknowledgeAlarm();
+  /// Confirma que el usuario está despierto y cierra el viaje.
+  Future<void> acknowledgeAndFinish() async {
+    await controller.finish();
     notifyListeners();
   }
 
   /// Cancela la alarma y el viaje.
   Future<void> cancel() async {
-    _cancelSnoozeTimer();
     await controller.cancel();
     notifyListeners();
   }
 
-  /// Cambia los minutos de posponer.
-  void setSnoozeMinutes(int minutes) {
-    _snoozeMinutes = minutes;
+  /// Pospone la alarma por [minutes] minutos.
+  Future<void> snooze(int minutes) async {
+    await controller.snooze(duration: Duration(minutes: minutes));
     notifyListeners();
-  }
-
-  /// Pospone la alarma por [snoozeMinutes] minutos.
-  ///
-  /// Reprograma una alarma futura que se disparará después del tiempo de
-  /// posponer. Si se alcanza el límite de pospones, se deshabilita la opción.
-  Future<void> snooze() async {
-    if (_isSnoozing || maxSnoozesReached) return;
-
-    _isSnoozing = true;
-    _snoozeCount++;
-    _snoozeWakeUpTime = DateTime.now().add(Duration(minutes: _snoozeMinutes));
-    notifyListeners();
-
-    _cancelSnoozeTimer();
-    _snoozeTimer = Timer(Duration(minutes: _snoozeMinutes), () {
-      _isSnoozing = false;
-      _snoozeWakeUpTime = null;
-      notifyListeners();
-      // Re-evaluar: la alarma debería sonar de nuevo
-      controller.acknowledgeAlarm(); // esto resetea para la siguiente evaluación
-      notifyListeners();
-    });
   }
 
   /// Detiene el sonido de alarma sin cancelar el viaje.
@@ -89,14 +57,11 @@ class AlarmWakeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _onControllerChanged() => notifyListeners();
+
   @override
   void dispose() {
-    _cancelSnoozeTimer();
+    controller.removeListener(_onControllerChanged);
     super.dispose();
-  }
-
-  void _cancelSnoozeTimer() {
-    _snoozeTimer?.cancel();
-    _snoozeTimer = null;
   }
 }

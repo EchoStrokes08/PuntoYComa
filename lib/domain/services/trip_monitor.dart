@@ -37,14 +37,20 @@ class TripMonitor {
       uncertaintyMeters: fallback.uncertaintyMeters,
       acknowledgementReceived: acknowledgementReceived,
     );
+    final remainingMeters = fallback.valid ? fallback.remainingMeters : gpsDistance;
+    final effectiveSpeed = speedMetersPerSecond.clamp(1.0, 45.0).toDouble();
     return TripAssessment(
       distanceMeters: gpsDistance,
       alertRadiusMeters: radius,
-      confidence: fallback.valid
-          ? TripConfidence.degraded
-          : TripConfidence.limited,
+      confidence: sinceLastReliableFix <= const Duration(seconds: 20)
+          ? TripConfidence.high
+          : fallback.valid
+              ? TripConfidence.degraded
+              : TripConfidence.limited,
       wakeUpStage: stage,
       needsPreventiveAlert: !fallback.valid,
+      remainingMeters: remainingMeters,
+      etaSeconds: (remainingMeters / effectiveSpeed).round(),
     );
   }
 }
@@ -58,11 +64,20 @@ class TripAssessment {
     required this.confidence,
     required this.wakeUpStage,
     required this.needsPreventiveAlert,
-  });
+    double? remainingMeters,
+    this.etaSeconds = 0,
+  }) : remainingMeters = remainingMeters ?? distanceMeters;
 
   final double distanceMeters;
   final double alertRadiusMeters;
   final TripConfidence confidence;
   final WakeUpStage wakeUpStage;
   final bool needsPreventiveAlert;
+
+  /// Distancia restante usada por la política (incluye extrapolación cuando
+  /// el GPS lleva tiempo callado).
+  final double remainingMeters;
+
+  /// ETA estimada con la velocidad real del último fix.
+  final int etaSeconds;
 }

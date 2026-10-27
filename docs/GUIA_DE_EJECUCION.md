@@ -263,7 +263,7 @@ Desde la raíz del proyecto:
 flutter test
 ```
 
-Resultado esperado: **47 pruebas pasando**.
+Resultado esperado: **82 pruebas pasando**.
 
 También ejecutar el análisis estático:
 
@@ -442,4 +442,4 @@ npm run dev   # o docker compose up --build
 
 ---
 
-> **Estado:** Todas las fases (1-5) completadas. `flutter analyze` 0 issues, `flutter test` 47 pruebas, `npm test` 10 pruebas, `npm run lint` limpio, `npm run build` OK. (26/10/2026)
+> **Estado:** Todas las fases (1-5 y A-D) completadas. `flutter analyze` 0 issues, `flutter test` 82 pruebas, `npm test` 10 pruebas, `npm run lint` limpio, `npm run build` OK. (27/10/2026)

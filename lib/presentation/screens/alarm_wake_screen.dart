@@ -9,14 +9,17 @@ import '../../data/persistence/secure_trip_repository.dart';
 import '../../data/persistence/trip_history_repository.dart';
 import '../../domain/entities/trip.dart';
 import '../../design/design.dart';
+import '../state/punto_scope.dart';
 import '../state/trip_controller.dart';
 import '../view_models/view_models.dart';
 
 /// Pantalla de alarma a pantalla completa con alto contraste.
 ///
 /// Se muestra cuando suena la alarma sonora, con botones grandes para
-/// confirmar despertar o posponer. Deliberadamente no usa el tema normal:
-/// fondo naranja de alarma, tinta blanca y CTA blanco con tinta oscura.
+/// confirmar despertar o posponer (1, 3 o 5 min). Deliberadamente no usa el
+/// tema normal: fondo naranja de alarma, tinta blanca y CTA blanco con tinta
+/// oscura. El posponer vive en el controlador compartido, igual que la
+/// acción "Posponer" de la notificación.
 class AlarmWakeScreen extends StatefulWidget {
   const AlarmWakeScreen({super.key, required this.trip});
 
@@ -28,11 +31,13 @@ class AlarmWakeScreen extends StatefulWidget {
 
 class _AlarmWakeScreenState extends State<AlarmWakeScreen>
     with SingleTickerProviderStateMixin {
+  bool _initialized = false;
+  bool _ownsController = false;
   late TripController _controller;
   late LocalNotificationWakeUpActuator _actuator;
   late AlarmWakeViewModel _viewModel;
   late AnimationController _pulseController;
-  Timer? _countdownTimer;
+  Timer? _clockTicker;
 
   @override
   void initState() {
@@ -41,49 +46,69 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
+  }
 
-    _actuator = LocalNotificationWakeUpActuator();
-    _controller = TripController(
-      locationSource: const GeolocatorLocationSource(),
-      tripRepository: SecureTripRepository(),
-      tripHistoryRepository: TripHistoryRepositoryImpl(),
-      wakeUpActuator: _actuator,
-      requestPermission: () async => true,
-      setForegroundProtection: (_) async {},
-    );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+
+    final scope = PuntoScope.maybeOf(context);
+    _actuator = scope?.actuator ?? LocalNotificationWakeUpActuator();
+    if (scope != null) {
+      _controller = scope.controller;
+    } else {
+      _ownsController = true;
+      _controller = TripController(
+        locationSource: const GeolocatorLocationSource(),
+        tripRepository: SecureTripRepository(),
+        tripHistoryRepository: TripHistoryRepositoryImpl(),
+        wakeUpActuator: _actuator,
+        requestPermission: () async => true,
+        setForegroundProtection: (_) async {},
+      );
+    }
+    // El viaje ya llega armado desde el radar; no se rearma aquí para no
+    // reiniciar el presupuesto de pospones ni volver a pedir permisos.
     _viewModel = AlarmWakeViewModel(
       controller: _controller,
       actuator: _actuator,
       trip: widget.trip,
     );
 
-    _startCountdown();
-  }
-
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    _controller.dispose();
-    _pulseController.dispose();
-    _viewModel.dispose();
-    super.dispose();
-  }
-
-  void _startCountdown() {
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _clockTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
   }
 
+  @override
+  void dispose() {
+    _clockTicker?.cancel();
+    _viewModel.dispose();
+    if (_ownsController) _controller.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
   String _formatCountdown(DateTime? wakeUpTime) {
     if (wakeUpTime == null) return '';
-    final now = DateTime.now();
-    final diff = wakeUpTime.difference(now);
+    final diff = wakeUpTime.difference(DateTime.now());
     if (diff.isNegative) return 'ahora';
     final minutes = diff.inMinutes.remainder(60);
     final seconds = diff.inSeconds.remainder(60);
-    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+    return "${minutes.toString().padLeft(2, '0')}:"
+        "${seconds.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> _acknowledge() async {
+    await _viewModel.acknowledgeAndFinish();
+    if (mounted) context.go('/');
+  }
+
+  Future<void> _cancel() async {
+    await _viewModel.cancel();
+    if (mounted) context.go('/');
   }
 
   @override
@@ -109,10 +134,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
                 animation: _pulseController,
                 builder: (context, child) {
                   final scale = 1.0 + (_pulseController.value * 0.1);
-                  return Transform.scale(
-                    scale: scale,
-                    child: child,
-                  );
+                  return Transform.scale(scale: scale, child: child);
                 },
                 child: Container(
                   width: 100,
@@ -120,13 +142,12 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: onAlarm.withValues(alpha: 0.2),
-                    border: Border.all(
-                      color: onAlarm,
-                      width: 3,
-                    ),
+                    border: Border.all(color: onAlarm, width: 3),
                   ),
                   child: Icon(
-                    Icons.notifications_active_rounded,
+                    _viewModel.isSnoozing
+                        ? Icons.snooze_rounded
+                        : Icons.notifications_active_rounded,
                     size: 48,
                     color: onAlarm,
                   ),
@@ -135,7 +156,9 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
             ),
             const SizedBox(height: PuntoSpacing.xl),
             Text(
-              'Tu parada se acerca',
+              _viewModel.isSnoozing
+                  ? 'Alarma pospuesta'
+                  : 'Tu parada se acerca',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     color: onAlarm,
                     fontWeight: FontWeight.w700,
@@ -144,7 +167,10 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
             ),
             const SizedBox(height: PuntoSpacing.md),
             Text(
-              'Prepara tu salida. Confirma que estás despierto.',
+              _viewModel.isSnoozing
+                  ? 'Volverá a sonar en '
+                      '${_formatCountdown(_viewModel.snoozeWakeUpTime)}.'
+                  : 'Prepara tu salida. Confirma que estás despierto.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: onAlarm.withValues(alpha: 0.92),
                   ),
@@ -166,19 +192,13 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.snooze_rounded,
-                      color: onAlarm,
-                      size: 20,
-                    ),
+                    Icon(Icons.snooze_rounded, color: onAlarm, size: 20),
                     const SizedBox(width: PuntoSpacing.xs),
                     Text(
-                      'Pospuesto · vuelve en '
-                      '${_formatCountdown(_viewModel.snoozeWakeUpTime)}',
-                      style:
-                          Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: onAlarm,
-                              ),
+                      'Pospones restantes: ${_viewModel.snoozesRemaining}',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: onAlarm,
+                          ),
                     ),
                   ],
                 ),
@@ -191,7 +211,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
               fullWidth: true,
               height: 56,
               borderRadius: PuntoBorders.lg,
-              onPressed: _viewModel.acknowledge,
+              onPressed: _acknowledge,
               label: 'Ya desperté',
               backgroundColor: onAlarm,
               foregroundColor: PuntoColors.alarmInk,
@@ -212,54 +232,36 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
             ),
             const SizedBox(height: PuntoSpacing.md),
             if (!_viewModel.maxSnoozesReached) ...[
-              PuntoOutlinedButton(
-                fullWidth: true,
-                onPressed: () {
-                  _viewModel.setSnoozeMinutes(1);
-                  _viewModel.snooze();
-                },
-                label: 'Posponer 1 min',
-                foregroundColor: onAlarm,
-                backgroundColor: PuntoColors.alarmScrim,
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.snooze_rounded, size: 20),
-                    SizedBox(width: PuntoSpacing.sm),
-                    Flexible(
-                      child: Text(
-                        'Posponer 1 min',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  for (final minutes in const [1, 3, 5]) ...[
+                    if (minutes != 1)
+                      const SizedBox(width: PuntoSpacing.sm),
+                    Expanded(
+                      child: PuntoOutlinedButton(
+                        height: 52,
+                        onPressed: () => _viewModel.snooze(minutes),
+                        label: 'Posponer $minutes min',
+                        foregroundColor: onAlarm,
+                        backgroundColor: PuntoColors.alarmScrim,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.snooze_rounded, size: 18),
+                            const SizedBox(width: PuntoSpacing.xs),
+                            Flexible(
+                              child: Text(
+                                '$minutes min',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: PuntoSpacing.sm),
-              PuntoOutlinedButton(
-                fullWidth: true,
-                onPressed: () {
-                  _viewModel.setSnoozeMinutes(5);
-                  _viewModel.snooze();
-                },
-                label: 'Posponer 5 min',
-                foregroundColor: onAlarm,
-                backgroundColor: PuntoColors.alarmScrim,
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.snooze_rounded, size: 20),
-                    SizedBox(width: PuntoSpacing.sm),
-                    Flexible(
-                      child: Text(
-                        'Posponer 5 min',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
               const SizedBox(height: PuntoSpacing.sm),
               Text(
@@ -298,10 +300,7 @@ class _AlarmWakeScreenState extends State<AlarmWakeScreen>
               ),
             const SizedBox(height: PuntoSpacing.sm),
             PuntoTextButton(
-              onPressed: () {
-                _viewModel.cancel();
-                context.go('/');
-              },
+              onPressed: _cancel,
               label: 'Cancelar alarma',
               foregroundColor: onAlarm,
               child: const Text('Cancelar alarma'),

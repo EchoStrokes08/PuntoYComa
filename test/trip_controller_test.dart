@@ -6,6 +6,7 @@ import 'package:punto_y_coma/domain/entities/trip.dart';
 import 'package:punto_y_coma/domain/services/platform_contracts.dart';
 import 'package:punto_y_coma/domain/services/trip_history_contracts.dart';
 import 'package:punto_y_coma/domain/services/trip_monitor.dart';
+import 'package:punto_y_coma/domain/services/wake_up_actuator_contracts.dart';
 import 'package:punto_y_coma/domain/services/wake_up_policy.dart';
 import 'package:punto_y_coma/presentation/state/trip_controller.dart';
 
@@ -82,6 +83,11 @@ class _FakeActuator implements WakeUpActuator {
   int cleared = 0;
   int testPatterns = 0;
   int testNotifications = 0;
+  void Function(WakeUpAction action)? actionHandler;
+
+  @override
+  void onAction(void Function(WakeUpAction action)? handler) =>
+      actionHandler = handler;
 
   @override
   Future<void> setStage(WakeUpStage stage) async => stages.add(stage);
@@ -176,7 +182,7 @@ void main() {
     await controller.arm(draft());
     locationSource.emit(sampleAtMetersNorth(2000));
     expect(controller.wakeUpStage, WakeUpStage.monitoring);
-    expect(controller.assessment?.confidence, TripConfidence.degraded);
+    expect(controller.assessment?.confidence, TripConfidence.high);
   });
 
   test('entering the alert radius escalates even without acknowledgement',

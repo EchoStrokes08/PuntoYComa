@@ -1,5 +1,8 @@
 import 'wake_up_policy.dart';
 
+/// Acción elegida por el usuario desde una notificación de alarma.
+enum WakeUpAction { acknowledge, snooze }
+
 /// Extensión del contrato de actuador para pruebas de patrón háptico y
 /// notificaciones de alarma. Separado para que la UI pueda probar el actuador
 /// sin iniciar una vigilancia completa.

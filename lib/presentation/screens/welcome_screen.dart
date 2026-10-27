@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/alerts/local_notification_wake_up_actuator.dart';
 import '../../design/design.dart';
 import '../animations/animations.dart';
+import '../state/punto_scope.dart';
 import '../view_models/view_models.dart';
 
 /// Pantalla de bienvenida: promesa de calma, héroe respirante y un solo CTA.
@@ -20,8 +21,9 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  late WelcomeViewModel _viewModel;
+  WelcomeViewModel? _viewModel;
   late AnimationController _fadeController;
+  bool _initialized = false;
 
   @override
   void initState() {
@@ -30,21 +32,33 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..forward();
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     _viewModel = WelcomeViewModel(
-      actuator: LocalNotificationWakeUpActuator(),
+      actuator:
+          PuntoScope.maybeOf(context)?.actuator ??
+          LocalNotificationWakeUpActuator(),
     );
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _viewModel.dispose();
+    _viewModel?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = _viewModel;
+    if (viewModel == null) {
+      return const PuntoScaffold(child: SizedBox.shrink());
+    }
     return PuntoScaffold(
       header: PuntoBrandHeader(
         trailing: Semantics(
@@ -91,10 +105,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             ),
             const Spacer(),
             AnimatedBuilder(
-              animation: _viewModel,
+              animation: viewModel,
               builder: (context, _) => _VibrationCard(
-                isPlaying: _viewModel.isDemoPlaying,
-                onPlay: _viewModel.playHapticDemo,
+                isPlaying: viewModel.isDemoPlaying,
+                onPlay: viewModel.playHapticDemo,
               ),
             ),
             const SizedBox(height: PuntoSpacing.lg),
@@ -103,7 +117,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               height: 56,
               borderRadius: PuntoBorders.lg,
               onPressed: () {
-                _viewModel.startFlow();
+                viewModel.startFlow();
                 context.push('/destino');
               },
               label: 'Crear alarma de llegada',

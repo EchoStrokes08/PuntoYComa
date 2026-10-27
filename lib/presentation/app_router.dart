@@ -28,32 +28,39 @@ class AppRouter {
         ),
         GoRoute(
           path: '/destino',
-          pageBuilder: (context, state) =>
-              _fadeSlide(state, const DestinationScreen()),
+          pageBuilder: (context, state) => _fadeSlide(
+            state,
+            DestinationScreen(editing: state.extra == true),
+          ),
         ),
         GoRoute(
           path: '/preparacion',
           pageBuilder: (context, state) {
-            final stop = state.extra as CachedStop?;
             return _fadeSlide(
               state,
-              PreparationScreen(
-                stop: stop ??
-                    CachedStop(
-                      id: 'default',
-                      name: 'Calle 76',
-                      latitude: 4.6680,
-                      longitude: -74.0519,
-                      mode: TransportMode.metro,
-                    ),
-              ),
+              PreparationScreen(stop: _stopFromExtra(state.extra)),
             );
+          },
+        ),
+        GoRoute(
+          path: '/permisos',
+          pageBuilder: (context, state) {
+            final trip = state.extra as Trip?;
+            if (trip == null) {
+              return _fadeSlide(
+                state,
+                const _MissingTripScreen(
+                  message: 'No hay viaje por armar.',
+                ),
+              );
+            }
+            return _fadeSlide(state, PermissionScreen(trip: trip));
           },
         ),
         GoRoute(
           path: '/armar',
           pageBuilder: (context, state) =>
-              _fadeSlide(state, const ArmedTripScreen()),
+              _fadeSlide(state, ArmedTripScreen(trip: state.extra as Trip?)),
         ),
         GoRoute(
           path: '/alarma',
@@ -62,9 +69,7 @@ class AppRouter {
             if (trip == null) {
               return _fadeSlide(
                 state,
-                const Scaffold(
-                  body: Center(child: Text('No hay viaje activo')),
-                ),
+                const _MissingTripScreen(message: 'No hay viaje activo.'),
               );
             }
             return _fadeSlide(state, AlarmWakeScreen(trip: trip));
@@ -81,6 +86,30 @@ class AppRouter {
               _fadeSlide(state, const SettingsScreen()),
         ),
       ],
+    );
+  }
+
+  /// Acepta tanto una parada como un viaje guardado (historial). Antes el
+  /// historial enviaba un [Trip] y la ruta lo casteaba a [CachedStop], lo que
+  /// rompía al repetir una alarma.
+  static CachedStop _stopFromExtra(Object? extra) {
+    if (extra is CachedStop) return extra;
+    if (extra is Trip) {
+      return CachedStop(
+        id: extra.id,
+        name: 'Destino guardado',
+        latitude: extra.destination.latitude,
+        longitude: extra.destination.longitude,
+        mode: extra.mode,
+        routeId: '${extra.alertLeadTime.inMinutes} min',
+      );
+    }
+    return const CachedStop(
+      id: 'default',
+      name: 'Calle 76',
+      latitude: 4.6680,
+      longitude: -74.0519,
+      mode: TransportMode.metro,
     );
   }
 
@@ -108,6 +137,34 @@ class AppRouter {
         );
       },
       child: child,
+    );
+  }
+}
+
+/// Estado seguro para rutas que requieren un viaje en `extra`.
+class _MissingTripScreen extends StatelessWidget {
+  const _MissingTripScreen({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 40),
+            const SizedBox(height: 12),
+            Text(message),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => context.go('/'),
+              child: const Text('Volver al inicio'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

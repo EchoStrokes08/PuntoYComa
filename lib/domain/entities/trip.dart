@@ -23,4 +23,22 @@ class Trip {
   final TransportMode mode;
   final TripStatus status;
   final Duration alertLeadTime;
+
+  /// Copia inmutable del viaje. Se usa para editar la alarma armada sin
+  /// perder la identidad del viaje ni reiniciar la vigilancia.
+  Trip copyWith({
+    String? id,
+    GeoPoint? destination,
+    TransportMode? mode,
+    TripStatus? status,
+    Duration? alertLeadTime,
+  }) {
+    return Trip(
+      id: id ?? this.id,
+      destination: destination ?? this.destination,
+      mode: mode ?? this.mode,
+      status: status ?? this.status,
+      alertLeadTime: alertLeadTime ?? this.alertLeadTime,
+    );
+  }
 }

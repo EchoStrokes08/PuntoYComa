@@ -73,6 +73,11 @@ void main() {
         await pumpScreen(tester, PreparationScreen(stop: sampleStop()), size);
       });
 
+      testWidgets('PermissionScreen se monta sin excepciones de layout',
+          (tester) async {
+        await pumpScreen(tester, PermissionScreen(trip: sampleTrip()), size);
+      });
+
       testWidgets('ArmedTripScreen se monta sin excepciones de layout',
           (tester) async {
         await pumpScreen(tester, const ArmedTripScreen(), size);

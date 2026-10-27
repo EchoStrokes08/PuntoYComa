@@ -6,12 +6,16 @@ import '../../data/routing/local_stop_cache.dart';
 import '../../domain/entities/trip.dart';
 import '../../design/design.dart';
 import '../animations/animations.dart';
+import '../state/punto_scope.dart';
 import '../view_models/view_models.dart';
 
 /// Pantalla de preparación: margen, sonido y armado de alarma.
 ///
 /// El contenido configura el viaje; las acciones (probar vibración/notificación
 /// y el CTA de armar) quedan fijas abajo para que siempre sean alcanzables.
+///
+/// Fase D: el armado pasa por la pantalla de permiso en contexto, que arma el
+/// viaje en el controlador compartido antes de navegar al radar.
 class PreparationScreen extends StatefulWidget {
   const PreparationScreen({super.key, required this.stop});
 
@@ -22,24 +26,30 @@ class PreparationScreen extends StatefulWidget {
 }
 
 class _PreparationScreenState extends State<PreparationScreen> {
-  late PreparationViewModel _viewModel;
+  PreparationViewModel? _viewModel;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _viewModel = PreparationViewModel(
-      actuator: LocalNotificationWakeUpActuator(),
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+    final actuator =
+        PuntoScope.maybeOf(context)?.actuator ??
+        LocalNotificationWakeUpActuator();
+    _viewModel = PreparationViewModel(actuator: actuator);
   }
 
   @override
   void dispose() {
-    _viewModel.dispose();
+    _viewModel?.dispose();
     super.dispose();
   }
 
   void _arm() {
-    final draft = _viewModel.createDraft(
+    final viewModel = _viewModel;
+    if (viewModel == null) return;
+    final draft = viewModel.createDraft(
       id: 'trip-${DateTime.now().millisecondsSinceEpoch}',
       destination: GeoPoint(
         widget.stop.latitude,
@@ -47,24 +57,28 @@ class _PreparationScreenState extends State<PreparationScreen> {
       ),
       mode: widget.stop.mode,
     );
-    context.push('/armar', extra: draft);
+    context.push('/permisos', extra: draft);
   }
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = _viewModel;
+    if (viewModel == null) {
+      return const PuntoScaffold(child: SizedBox.shrink());
+    }
     return PuntoScaffold(
       header: const PuntoScreenHeader(title: 'Prepara tu descanso'),
       bottomBar: AnimatedBuilder(
-        animation: _viewModel,
+        animation: viewModel,
         builder: (context, _) => Column(
           children: [
             Row(
               children: [
                 Expanded(
                   child: PuntoOutlinedButton(
-                    onPressed: _viewModel.isTestingVibration
+                    onPressed: viewModel.isTestingVibration
                         ? null
-                        : _viewModel.testVibration,
+                        : viewModel.testVibration,
                     label: 'Probar vibración',
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -85,9 +99,9 @@ class _PreparationScreenState extends State<PreparationScreen> {
                 const SizedBox(width: PuntoSpacing.s12),
                 Expanded(
                   child: PuntoOutlinedButton(
-                    onPressed: _viewModel.isTestingNotification
+                    onPressed: viewModel.isTestingNotification
                         ? null
-                        : _viewModel.testNotification,
+                        : viewModel.testNotification,
                     label: 'Probar notificación',
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -151,7 +165,7 @@ class _PreparationScreenState extends State<PreparationScreen> {
             ),
             const SizedBox(height: PuntoSpacing.sm),
             AnimatedBuilder(
-              animation: _viewModel,
+              animation: viewModel,
               builder: (context, _) => SegmentedButton<int>(
                 segments: const [
                   ButtonSegment(
@@ -167,23 +181,23 @@ class _PreparationScreenState extends State<PreparationScreen> {
                     label: Text('5 min'),
                   ),
                 ],
-                selected: {_viewModel.leadMinutes},
+                selected: {viewModel.leadMinutes},
                 onSelectionChanged: (value) {
-                  _viewModel.setLeadMinutes(value.first);
+                  viewModel.setLeadMinutes(value.first);
                 },
               ),
             ),
             const SizedBox(height: PuntoSpacing.md),
             AnimatedBuilder(
-              animation: _viewModel,
+              animation: viewModel,
               builder: (context, _) => SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Sonido al final'),
                 subtitle: const Text(
                   'Las vibraciones empiezan de forma suave.',
                 ),
-                value: _viewModel.soundAtEnd,
-                onChanged: _viewModel.setSoundAtEnd,
+                value: viewModel.soundAtEnd,
+                onChanged: viewModel.setSoundAtEnd,
               ),
             ),
             const SizedBox(height: PuntoSpacing.lg),
