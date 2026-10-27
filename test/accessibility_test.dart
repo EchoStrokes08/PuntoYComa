@@ -195,7 +195,6 @@ void main() {
 
     testWidgets('Slider tiene semántica de slider', (tester) async {
       final handle = tester.ensureSemantics();
-      addTearDown(handle.dispose);
       await _pumpSlider(tester);
 
       // El nodo de semántica del Slider cuelga de un RenderObject descendiente,
@@ -222,6 +221,9 @@ void main() {
           // Elemento sin nodo de semántica propio: se ignora.
         }
       }
+      // Se libera dentro del test: addTearDown corre después de la
+      // verificación de handles de semántica y haría fallar el test.
+      handle.dispose();
       expect(found, isTrue, reason: 'Ningún nodo del Slider tiene isSlider');
     });
   });

@@ -26,7 +26,9 @@ class PuntoTheme {
         outlineVariant: PuntoLightColors.outlineVariant,
         onSurface: PuntoLightColors.onSurface,
         onSurfaceVariant: PuntoLightColors.onSurfaceVariant,
-        error: PuntoColors.signalLimited,
+        // Rojo más oscuro que signalLimited (#EF4444 + blanco = 3.76:1) para
+        // cumplir WCAG AA (≥ 4.5:1) con onError blanco (~6.5:1).
+        error: const Color(0xFFB91C1C),
         errorContainer: PuntoColors.alarmContainer,
         onError: PuntoColors.onAlarm,
       ),
@@ -145,9 +147,10 @@ class PuntoTheme {
         outlineVariant: PuntoDarkColors.outlineVariant,
         onSurface: PuntoDarkColors.onSurface,
         onSurfaceVariant: PuntoDarkColors.onSurfaceVariant,
-        error: PuntoColors.signalLimited,
+        // Rojo claro sobre fondo oscuro con texto oscuro (~5.8:1, WCAG AA).
+        error: PuntoDarkColors.signalLimited,
         errorContainer: PuntoColors.alarmContainer,
-        onError: PuntoDarkColors.onAlarm,
+        onError: const Color(0xFF450A0A),
       ),
       textTheme: _textTheme(PuntoDarkColors.onSurface, PuntoDarkColors.onSurfaceVariant),
       cardTheme: CardThemeData(
